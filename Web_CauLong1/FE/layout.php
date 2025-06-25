@@ -1,71 +1,24 @@
+<?php
+// Bạn có thể đặt các biến PHP hoặc include file ở đây nếu cần
+?>
 <!DOCTYPE html>
 <html>
     <head>
         <meta charset="utf-8">
         <meta http-equiv="X-UA-Compatible" content="IE=edge">
-        <title>Layout</title>
+        <title>Trang chủ VNSPORTS</title>
         <meta name="description" content="">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <link rel="stylesheet" href="">
         <link href="https://cdn.jsdelivr.net/npm/remixicon@2.5.0/fonts/remixicon.css" rel="stylesheet">
         <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
         <link rel="stylesheet" href="../assets/css/style.css">
-       
+
     </head>
     <body>
         <div id="khung">
-            <div id="header">
-                <div class="container">
-                  <!-- Logo -->
-                    <a href="layout.html" class="logo">
-                    <img src="../assets/Picture/Logo.jpg" alt="Logo Yêu Cầu Lông" />
-                    YeuCauLong</a>
+            <?php include("../Index/header.php"); ?>
 
-                    <!-- Search Bar -->
-                    <div class="search-box">
-                    <input type="text" placeholder="Tìm kiếm sản phẩm..." />
-                    <i class="ri-search-line"></i>
-                    </div>
-
-                    <!-- Navigation Right -->
-                    <nav class="nav-right">
-                    <ul class="nav-right-list">
-                        <!-- Tài khoản -->
-                        <li class="nav-right-item dropdown">
-                        <a href="#" class="nav-right-link">
-                            <i class="ri-user-line"></i> Tài khoản <i class="ri-arrow-down-s-line dropdown-arrow"></i>
-                        </a>
-                        <ul class="dropdown-menu">
-                            <li><a href="./pages/dang-ky.html"><i class="ri-user-add-line"></i> Đăng ký</a></li>
-                            <li><a href="./pages/dang-nhap.html"><i class="ri-login-box-line"></i> Đăng nhập</a></li>
-                        </ul>
-                        </li>
-
-                        <!-- Giỏ hàng -->
-                        <li class="nav-right-item dropdown">
-                        <a href="#" class="nav-right-link">
-                            <i class="ri-shopping-cart-line"></i> Giỏ hàng <i class="ri-arrow-down-s-line dropdown-arrow"></i>
-                        </a>
-                        <div class="dropdown-menu cart-dropdown">
-                            <i class="ri-shopping-bag-3-line cart-icon"></i>
-                            <p class="empty-cart-msg">Không có sản phẩm trong giỏ hàng</p>
-                        </div>
-                        </li>
-
-                        <!-- Tra cứu đơn hàng -->
-                        <li class="nav-right-item dropdown">
-                        <a href="#" class="nav-right-link">
-                            <i class="ri-file-list-3-line"></i> Tra cứu đơn <i class="ri-arrow-down-s-line dropdown-arrow"></i>
-                        </a>
-                        <ul class="dropdown-menu order-dropdown">
-                            <li><a href="#"><i class="ri-search-eye-line"></i> Kiểm tra đơn</a></li>
-                            <li><a href="#"><i class="ri-tools-line"></i> Bảo hành</a></li>
-                        </ul>
-                        </li>
-                    </ul>
-                    </nav>
-                </div>
-            </div>
             <div id="Slide">
                 <!-- Slide Carousel (tối giản) -->
                     <div class="banner-carousel">
@@ -259,7 +212,7 @@
             <div id="Banner">
                 <div class="banner-ads" style="text-align: center;">
                 <a href="#" target="_blank">
-                    <img src="../Picture/slide3.jpg" alt="Quảng cáo vợt cầu lông" style="max-width: 100%; height: auto; border-radius: 5px;">
+                    <img src="../assets/Picture/slide3.jpg" alt="Quảng cáo vợt cầu lông" style="max-width: 100%; height: auto; border-radius: 5px;">
                 </a>
                 </div>
             </div>
@@ -323,83 +276,8 @@
                 </div>
             </div>
 
-            <div id="footer">
-                
-                <div class="container">
-                    <div class="row">
-                        <!-- Thông tin chung -->
-                        <div class="col">
-                            <h3>THÔNG TIN CHUNG</h3>
-                            <p><strong>VN Sports</strong> là hệ thống cửa hàng cầu lông với hơn nhiều chi nhánh trên toàn quốc, cung cấp sỉ và lẻ các mặt hàng dụng cụ cầu lông từ phong trào tới chuyên nghiệp.</p>
-                            <p><strong>Sứ mệnh của VN Sports</strong> <em>"  là đồng hành cùng người chơi thể thao bằng những sản phẩm và dịch vụ tốt nhất, giúp họ nâng cao sức khỏe và chinh phục giới hạn bản thân."</em></p>
-                            <p><strong>Tầm nhìn:</strong> <em>"Dẫn đầu xu hướng thể thao vì sức khỏe và phong cách sống bền vững tại Việt Nam."</em></p>
-                        </div>
+            <?php include("../Index/footer.php"); ?>
 
-                        <!-- Thông tin liên hệ -->
-                        <div class="col">
-                            <h3>THÔNG TIN LIÊN HỆ</h3>
-                            <p><strong>Hệ thống cửa hàng:</strong> <a href="#">1 Super Center, 5 shop Premium và 71 cửa hàng</a> trên toàn quốc</p>
-                            <p><a href="#" style="color:#e95211; font-weight:bold;">Xem tất cả các cửa hàng VN</a></p>
-                            <p><strong>Hotline:</strong> <a href="#">0977508430</a> | <a href="tel:0338000308">0338000308</a></p>
-                            <p><strong>Email:</strong> <a href="#">info@shopvnsport.com</a></p>
-                            <p><strong>Hợp tác kinh doanh:</strong> <a href="#">0366612920 (Ms. Nguyên)</a></p>
-                            <p><strong>Hotline bán sỉ:</strong> <a href="#">0911 105 211</a></p>
-                            <p><strong>Nhượng quyền thương hiệu:</strong> <a href="#">0842413345 (Mr. Tâm)</a></p>
-                            <p><strong>Than phiền dịch vụ:</strong> <a href="#">0844511205 (Ms. Uyển)</a></p>
-
-                            <!-- Mạng xã hội -->
-                            <div class="footer-social">
-                                <a href="#"><i class="ri-facebook-circle-fill"></i></a> |
-                                <a href="#"><i class="ri-youtube-fill"></i></a>
-                            </div>
-                        </div>
-
-                        <!-- Chính sách -->
-                        <div class="col">
-                            <h3>CHÍNH SÁCH</h3>
-                            <ul>
-                                <li><a href="/thong-tin-ve-van-chuyen-va-giao-nhan.html">Thông tin về vận chuyển và giao nhận</a></li>
-                                <li><a href="/chinh-sach-doi-tra-hoan-tien.html">Chính sách đổi trả, hoàn tiền</a></li>
-                                <li><a href="/chinh-sach-bao-hanh.html">Chính sách bảo hành</a></li>
-                                <li><a href="/chinh-sach-xu-ly-khieu-nai.html">Chính sách xử lý khiếu nại</a></li>
-                                <li><a href="/chinh-sach-van-chuyen.html">Chính sách vận chuyển</a></li>
-                                <li><a href="/dieu-khoan-su-dung.html">Điều khoản sử dụng</a></li>
-                                <li><a href="/chinh-sach-bao-mat.html">Chính sách bảo mật thông tin</a></li>
-                                <li><a href="/chinh-sach-nhuong-quyen-shopvnb.html">Chính sách nhượng quyền</a></li>
-                            </ul>
-                        </div>
-
-                        <!-- Hướng dẫn -->
-                        <div class="col">
-                            <h3>HƯỚNG DẪN</h3>
-                            <ul>
-                                <li><a href="/huong-dan-mua-hang-online.html">Hướng dẫn mua hàng online</a></li>
-                                <li><a href="/huong-dan-cach-chon-vot-cau-long-cho-nguoi-moi-choi.html">Hướng dẫn cách chọn vợt cầu lông</a></li>
-                                <li><a href="/huong-dan-thanh-toan.html">Hướng dẫn thanh toán</a></li>
-                                <li><a href="/kiem-tra-bao-hanh.html">Kiểm tra bảo hành</a></li>
-                                <li><a href="/kiem-tra-don-hang.html">Kiểm tra đơn hàng</a></li>
-                                <li><a href="/huong-dan-su-dung-website.html">Hướng dẫn sử dụng website</a></li>
-                            </ul>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="copyright">
-                    <div class="container">
-                        <p>
-                            Công ty VN SPORTS<br />
-                            Địa chỉ: 390/2 Hà Huy Giáp, Phường Thạnh Lộc, Quận 12, TPHCM<br />
-                            Email: info@shopvn.com<br />
-                            GPKD số 0314496879 do Sở KH và ĐT TP Hồ Chí Minh cấp ngày 00/00/2025<br />
-                            Giám đốc/Sở hữu website: <br />
-                            <a href="#" target="_blank" title="Đã đăng ký bộ công thương">
-                                <img src="../assets/Picture/logoct.png" alt="Đã đăng ký bộ công thương" style="max-width:120px;">
-                            </a>
-                        </p>
-                    </div>
-                </div>                
-                    </div>
-                </div>
         
         <script>
             document.addEventListener("DOMContentLoaded", function () {
