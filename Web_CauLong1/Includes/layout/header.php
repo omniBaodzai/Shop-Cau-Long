@@ -1,4 +1,4 @@
-<!--  include("../Index/header.php"); -->
+<!--  include("../Includes/layout/header.php"); -->
         <meta charset="utf-8">  
         <meta http-equiv="X-UA-Compatible" content="IE=edge">
         <title>Trang chủ VNSPORTS</title>
@@ -12,7 +12,7 @@
     <div id="header">
         <div class="container">
             <!-- Logo -->
-            <a href="layout.php" class="logo">
+            <a href="Index.php" class="logo">
                 <img src="../assets/Picture/Logo.jpg" alt="Logo Yêu Cầu Lông" />
                 YeuCauLong
             </a>

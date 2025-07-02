@@ -1,5 +1,16 @@
 <?php
-// Bạn có thể đặt các biến PHP hoặc include file ở đây nếu cần
+include '../Includes/db.php';
+
+$category = isset($_GET['category']) ? mysqli_real_escape_string($link, $_GET['category']) : null;
+$where_sql = $category ? "WHERE category = '$category'" : "";
+
+// Lấy sản phẩm rẻ nhất bên trái
+$featured_sql = "SELECT id, name, image, price FROM products $where_sql ORDER BY price ASC LIMIT 1";
+$featured = mysqli_query($link, $featured_sql)->fetch_assoc();
+
+// Lấy 8 sản phẩm đầu tiên bên phải
+$product_sql = "SELECT id, name, image, price FROM products $where_sql ORDER BY id DESC LIMIT 8";
+$products = mysqli_query($link, $product_sql);
 ?>
 <!DOCTYPE html>
 <html>
@@ -17,7 +28,7 @@
     </head>
     <body>
         <div id="khung">
-            <?php include("../Index/header.php"); ?>
+            <?php include("../Includes/layout/header.php"); ?>
 
             <div id="Slide">
                 <!-- Slide Carousel (tối giản) -->
@@ -44,7 +55,7 @@
                     </div>
                     </div>
             </div>
-            <div id="Banner">
+            <div class="Banner">
                  <section class="main-features">
                     <div class="main-features-container">
                     <div class="feature-box">
@@ -72,7 +83,7 @@
 
             </div>
     <!-- __________________________Content VỢT CẦU LÔNG _______________________ -->        
-            <div id="Banner">
+            <div class="Banner">
                 <div class="banner-ads" style="text-align: center;">
                 <a href="#">
                     <img src="../assets/Picture/slide1.jpg" alt="Quảng cáo vợt cầu lông" style="max-width: 100%; height: auto; border-radius: 5px;">
@@ -80,7 +91,7 @@
                 </div>
             </div>
 
-            <div id="Content">
+            <div class="Content">
                 <div class="section-header">
                     <h3>VỢT CẦU LÔNG</h3>
                     <ul class="tabs">
@@ -90,58 +101,36 @@
                     </ul>
                 </div>
 
-                <div id="left">
-                    Content1
-                </div>
-                <div id="right">
-                    <div class="product-grid">
-                    <div class="product">
-                        <a href="https://dasxsport.vn/san-pham/xstorm-tre-em-copa-icon-xanh">
-                        <img src="https://dasxsport.vn/storage/day/dsc06527-min.jpg" alt="Xstorm Trẻ Em Copa Icon - Xanh trắng">
-                        <h4>Xstorm Trẻ Em Copa Icon - Xanh trắng</h4>
-                        <p>280.000₫</p>
-                        </a>
+            <div class="content-row">
+                    <div class="left">
+                        <?php if($featured): ?>
+                            <a href="product.php?id=<?= $featured['id'] ?>">
+                                <img src="<?= htmlspecialchars($featured['image']) ?>" alt="<?= htmlspecialchars($featured['name']) ?>">
+                            </a>
+                        <?php else: ?>
+                            <p>Không có sản phẩm nào phù hợp.</p>
+                        <?php endif; ?>
                     </div>
-
-                    <div class="product">
-                        <a href="https://dasxsport.vn/san-pham/xstorm-tre-em-copa-icon-2">
-                        <img src="https://dasxsport.vn/storage/day/dsc06510-min.jpg" alt="Xstorm Trẻ Em Copa Icon - Trắng đen cam">
-                        <h4>Xstorm Trẻ Em Copa Icon - Trắng đen cam</h4>
-                        <p>280.000₫</p>
-                        </a>
-                    </div>
-
-                    <div class="product">
-                        <a href="https://dasxsport.vn/san-pham/xstorm-tre-em-copa-icon-trang-do-den-1">
-                        <img src="https://dasxsport.vn/storage/day/dsc06495-min.jpg" alt="Xstorm Trẻ Em Copa Icon - Trắng xanh đen">
-                        <h4>Xstorm Trẻ Em Copa Icon - Trắng xanh đen</h4>
-                        <p>280.000₫</p>
-                        </a>
-                    </div>
-
-                    <div class="product">
-                        <a href="https://dasxsport.vn/san-pham/xstorm-tre-em-copa-icon-xanh">
-                        <img src="https://dasxsport.vn/storage/day/dsc06527-min.jpg" alt="Xstorm Trẻ Em Copa Icon - Xanh trắng">
-                        <h4>Xstorm Trẻ Em Copa Icon - Xanh trắng</h4>
-                        <p>280.000₫</p>
-                        </a>
-                    </div>
-
-                    <div class="product">
-                        <a href="https://dasxsport.vn/san-pham/xstorm-tre-em-copa-icon-xanh">
-                        <img src="https://dasxsport.vn/storage/day/dsc06527-min.jpg" alt="Xstorm Trẻ Em Copa Icon - Xanh trắng">
-                        <h4>Xstorm Trẻ Em Copa Icon - Xanh trắng</h4>
-                        <p>280.000₫</p>
-                        </a>
-                    </div>
-
-                    <!-- Lặp tương tự cho các sản phẩm còn lại -->
+                    <div class="right">
+                        <?php if(mysqli_num_rows($products) > 0): ?>
+                            <?php while($row = mysqli_fetch_assoc($products)): ?>
+                                <div class="product">
+                                    <a href="product.php?id=<?= $row['id'] ?>">
+                                        <img src="<?= htmlspecialchars($row['image']) ?>" alt="<?= htmlspecialchars($row['name']) ?>">
+                                        <h4><?= htmlspecialchars($row['name']) ?></h4>
+                                        <p><?= number_format($row['price'], 0, ',', '.') ?>₫</p>
+                                    </a>
+                                </div>
+                            <?php endwhile; ?>
+                        <?php else: ?>
+                            <p>Không có sản phẩm nào.</p>
+                        <?php endif; ?>
                     </div>
                 </div>
             </div>
 
     <!-- __________________________Content TÚI cầu lông _______________________ -->        
-            <div id="Banner">
+            <div class="Banner">
                 <div class="banner-ads" style="text-align: center;">
                 <a href="#">
                     <img src="../assets/Picture/slide4.jpg" alt="Quảng cáo vợt cầu lông" style="max-width: 100%; height: auto; border-radius: 5px;">
@@ -149,7 +138,7 @@
                 </div>
             </div>
 
-            <div id="Content">
+            <div class="Content">
                 <div class="section-header">
                     <h3>TÚI CẦU LÔNG</h3>
                     <ul class="tabs">
@@ -158,12 +147,11 @@
                         <li><a href="#">Xem tất cả</a></li>
                     </ul>
                 </div>
-
-                <div id="left">
+                <div class="content-row">
+                <div class="left">
                     Content1
                 </div>
-                <div id="right">
-                    <div class="product-grid">
+                <div class="right">
                     <div class="product">
                         <a href="https://dasxsport.vn/san-pham/xstorm-tre-em-copa-icon-xanh">
                         <img src="https://dasxsport.vn/storage/day/dsc06527-min.jpg" alt="Xstorm Trẻ Em Copa Icon - Xanh trắng">
@@ -209,14 +197,14 @@
                 </div>
             </div>
     <!-- __________________________Content giày cầu lông _______________________ -->        
-            <div id="Banner">
+            <div class="Banner">
                 <div class="banner-ads" style="text-align: center;">
                 <a href="#" target="_blank">
                     <img src="../assets/Picture/slide3.jpg" alt="Quảng cáo vợt cầu lông" style="max-width: 100%; height: auto; border-radius: 5px;">
                 </a>
                 </div>
             </div>
-            <div id="Content">
+            <div class="Content">
                 <div class="section-header">
                     <h3>GIÀY CẦU LÔNG</h3>
                     <ul class="tabs">
@@ -226,11 +214,11 @@
                     </ul>
                 </div>
 
-                <div id="left">
+                <div class="content-row">
+                <div class="left">
                     Content1
                 </div>
-                <div id="right">
-                    <div class="product-grid">
+                <div class="right">
                     <div class="product">
                         <a href="https://dasxsport.vn/san-pham/xstorm-tre-em-copa-icon-xanh">
                         <img src="https://dasxsport.vn/storage/day/dsc06527-min.jpg" alt="Xstorm Trẻ Em Copa Icon - Xanh trắng">
@@ -275,8 +263,9 @@
                     </div>
                 </div>
             </div>
+    <!-- __________________________Footer _______________________ -->        
 
-            <?php include("../Index/footer.php"); ?>
+            <?php include("../Includes/layout/footer.php"); ?>
 
         
         <script>

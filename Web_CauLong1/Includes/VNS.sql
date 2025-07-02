@@ -24,6 +24,7 @@ CREATE TABLE products (
     price DECIMAL(10, 2) NOT NULL,     -- Giá sản phẩm
     old_price DECIMAL(10, 2),          -- Giá gốc (nếu có)
     sku VARCHAR(50) NOT NULL,          -- Mã sản phẩm
+    STTbrand int,
     brand VARCHAR(100),                -- Thương hiệu sản phẩm
     category VARCHAR(100) NOT NULL,    -- Danh mục sản phẩm
     warranty VARCHAR(50),              -- Thời gian bảo hành
