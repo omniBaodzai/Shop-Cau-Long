@@ -1,0 +1,176 @@
+            /*======================HEADER==============================*/
+            #header {
+                display: flex;
+                position: sticky;
+                top: 0;
+                z-index: 999;
+                align-items: center;
+                flex-wrap: wrap; /* Cho phép các phần tử con xuống dòng nếu thiếu chỗ */
+                justify-content: space-between;
+                padding: 15px 20px;
+                background:rgb(255, 255, 255);
+                border-bottom: 1px solid #ddd;
+                font-family: Arial, sans-serif;
+                }
+            #header .logo {
+                display: flex;
+                align-items: center;
+                font-weight: bold;
+                font-size: 20px;
+                text-decoration: none;
+                color: #000;
+                }
+            #header .logo img {
+                width: 40px;
+                margin-right: 10px;
+                }
+            #header .container {
+                width: 90%;
+                max-width: 1200px;
+                margin: 0 auto;
+                display: flex;                /* thêm dòng này */
+                align-items: center;          /* căn giữa theo chiều cao */
+                justify-content: space-between; /* căn đều 2 bên */
+                gap: 20px;                    /* cách đều các khối */
+                }
+            /* === Nav === */
+            #header .nav-right {
+                display: flex;
+                justify-content: flex-end; 
+                align-items: center;
+                gap: 20px;
+                }
+            #header .nav-right-list {
+                display: flex; /* li xếp ngang */
+                list-style: none; /* bỏ dấu chấm đầu dòng */
+                padding: 0;
+                margin: 0;
+            }
+            #header .nav-right-item {
+                position: relative;
+            }
+            #header .nav-right-item {
+                position: relative; /* Đảm bảo dropdown-menu neo đúng vị trí */
+            }
+
+            /* Khi hover vào nav-right-item thì dropdown-menu xuất hiện */
+            #header .nav-right-item:hover .dropdown-menu {
+                display: block;
+            }
+
+            #header .nav-right-link {
+                display: flex;
+                list-style: none;
+                align-items: center;
+                text-decoration: none; /* bỏ gạch liên kết */
+                color: #000;
+                font-size: 16px;
+                padding: 10px 15px;
+                transition: background-color 0.3s ease;
+            }
+            #header .nav-right-link:hover {
+                color: #00c0ff;
+            }
+            #header .dropdown-menu {
+                position: absolute;
+                top: 100%; /* Hiển thị dưới item */
+                right: 0;
+                background-color: #fff;
+                border-radius: 5px;
+                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+                display: none;      /*mặc đinh ẩn menu*/
+                min-width: 200px;
+                z-index: 1000; /* Ưu tiên hiển thị trên các phần tử khác */
+                padding: 10px 0;
+                list-style: none; /* bỏ dấu chấm đầu dòng */
+            }
+            #header .dropdown-menu a {
+                display: block;
+                padding: 10px 20px;
+                color: #333;
+                text-decoration: none;
+                transition: background 0.2s ease;
+            }
+            #header .dropdown-menu a:hover {
+                background-color: #f1f1f1;
+                color: #00c0ff;
+            }
+            #header .cart-dropdown {
+                text-align: center;
+                padding: 20px;
+            }
+            #header .cart-icon {
+                font-size: 24px;
+                color: #00c0ff;
+            }
+            #header .cart-count {
+                background-color:rgb(179, 207, 238); /* Màu nền cho số lượng sản phẩm */
+                color:rgb(196, 64, 24); /* Màu chữ */
+                font-size: 12px;
+                font-weight: bold;
+                border-radius: 50%; /* Bo tròn */
+                padding: 2px 6px; /* Khoảng cách bên trong */
+                margin-left: 5px; /* Khoảng cách giữa biểu tượng và số lượng */
+            }
+            /* --------Search Box --------- */
+            #header .search-box {
+                display: flex;
+                align-items: center;
+                border-radius: 999px;
+                background:rgb(82, 91, 136);
+                padding: 6px 14px;
+                transition: all 0.3s ease;
+                box-shadow: 0 2px 8px rgb(65, 49, 49);
+                max-width: 400px;
+                width: 100%;
+                }
+            #header .search-box input {
+                flex: 1; /* mở rộng kính theo không gian còn lại */
+                border: none;
+                outline: none;
+                padding: 8px 10px;
+                background: transparent;
+                color: #fff;
+                font-size: 14px;
+                width: 180px;
+                transition: all 0.3s ease;
+                }
+            #header .search-box input::placeholder {
+                color: #aaa;
+                }
+            #header .search-box i {
+                font-size: 20px;
+                color: #fff;
+                cursor: pointer;
+                transition: transform 0.2s ease;
+                }
+            #header .search-box i:hover {
+                transform: scale(1.2);
+                }
+            /* Responsive: thu gọn thành kính lúp */
+            @media (max-width: 768px) {
+                #header .search-box {
+                    width: 40px;
+                    padding: 6px;
+                    justify-content: center;
+                }
+
+                #header .search-box input {
+                    width: 0;
+                    padding: 0;
+                    opacity: 0;
+                    pointer-events: none;
+                }
+            }
+            @media (max-width: 768px) {
+                #header .search-box:hover {
+                    width: 200px; /* Mở rộng khi hover */
+                }
+
+                #header .search-box:hover input {
+                    width: 100%; /* Hiển thị input khi hover */
+                    padding: 8px 10px;
+                    opacity: 1;
+                    pointer-events: auto;
+                }
+            }

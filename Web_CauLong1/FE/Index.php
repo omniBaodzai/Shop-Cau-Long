@@ -1,16 +1,25 @@
 <?php
 include '../Includes/db.php';
 
-$category = isset($_GET['category']) ? mysqli_real_escape_string($link, $_GET['category']) : null;
-$where_sql = $category ? "WHERE category = '$category'" : "";
+// Featured từng loại
+$featured_vot_sql = "SELECT id, name, image, price FROM products WHERE category = 'Vợt cầu lông' ORDER BY RAND() LIMIT 1";
+$featured_vot = mysqli_query($link, $featured_vot_sql)->fetch_assoc();
 
-// Lấy sản phẩm rẻ nhất bên trái
-$featured_sql = "SELECT id, name, image, price FROM products $where_sql ORDER BY price ASC LIMIT 1";
-$featured = mysqli_query($link, $featured_sql)->fetch_assoc();
+$featured_tui_sql = "SELECT id, name, image, price FROM products WHERE category = 'Túi cầu lông' ORDER BY RAND() LIMIT 1";
+$featured_tui = mysqli_query($link, $featured_tui_sql)->fetch_assoc();
 
-// Lấy 8 sản phẩm đầu tiên bên phải
-$product_sql = "SELECT id, name, image, price FROM products $where_sql ORDER BY id DESC LIMIT 8";
-$products = mysqli_query($link, $product_sql);
+$featured_giay_sql = "SELECT id, name, image, price FROM products WHERE category = 'Giày cầu lông' ORDER BY RAND() LIMIT 1";
+$featured_giay = mysqli_query($link, $featured_giay_sql)->fetch_assoc();
+
+// Lấy 8 sản phẩm bên phải từng loại
+$vot_sql = "SELECT id, name, image, price FROM products WHERE category = 'Vợt cầu lông' ORDER BY id ASC LIMIT 8";
+$vot_products = mysqli_query($link, $vot_sql);
+
+$tui_sql = "SELECT id, name, image, price FROM products WHERE category = 'Túi cầu lông' ORDER BY id ASC LIMIT 8";
+$tui_products = mysqli_query($link, $tui_sql);
+
+$giay_sql = "SELECT id, name, image, price FROM products WHERE category = 'Giày cầu lông' ORDER BY id ASC LIMIT 8";
+$giay_products = mysqli_query($link, $giay_sql);
 ?>
 <!DOCTYPE html>
 <html>
@@ -103,25 +112,25 @@ $products = mysqli_query($link, $product_sql);
 
             <div class="content-row">
                     <div class="left">
-                        <?php if($featured): ?>
-                            <a href="product.php?id=<?= $featured['id'] ?>">
-                                <img src="<?= htmlspecialchars($featured['image']) ?>" alt="<?= htmlspecialchars($featured['name']) ?>">
+                        <?php if($featured_vot): ?>
+                            <a href="product.php?id=<?= $featured_vot['id'] ?>">
+                                <img src="<?= htmlspecialchars($featured_vot['image']) ?>" alt="<?= htmlspecialchars($featured_vot['name']) ?>">
                             </a>
                         <?php else: ?>
-                            <p>Không có sản phẩm nào phù hợp.</p>
+                            <p>Không có sản phẩm nào.</p>
                         <?php endif; ?>
                     </div>
                     <div class="right">
-                        <?php if(mysqli_num_rows($products) > 0): ?>
-                            <?php while($row = mysqli_fetch_assoc($products)): ?>
-                                <div class="product">
-                                    <a href="product.php?id=<?= $row['id'] ?>">
-                                        <img src="<?= htmlspecialchars($row['image']) ?>" alt="<?= htmlspecialchars($row['name']) ?>">
-                                        <h4><?= htmlspecialchars($row['name']) ?></h4>
-                                        <p><?= number_format($row['price'], 0, ',', '.') ?>₫</p>
-                                    </a>
-                                </div>
-                            <?php endwhile; ?>
+                        <?php if(mysqli_num_rows($vot_products) > 0): ?>
+                            <?php while($row = mysqli_fetch_assoc($vot_products)): ?>
+                            <div class="product">
+                                <a href="product.php?id=<?= $row['id'] ?>">
+                                    <img src="<?= htmlspecialchars($row['image']) ?>" alt="<?= htmlspecialchars($row['name']) ?>">
+                                    <h4><?= htmlspecialchars($row['name']) ?></h4>
+                                    <p><?= number_format($row['price'], 0, ',', '.') ?>₫</p>
+                                </a>
+                            </div>
+                        <?php endwhile; ?>
                         <?php else: ?>
                             <p>Không có sản phẩm nào.</p>
                         <?php endif; ?>
@@ -148,51 +157,29 @@ $products = mysqli_query($link, $product_sql);
                     </ul>
                 </div>
                 <div class="content-row">
-                <div class="left">
-                    Content1
-                </div>
-                <div class="right">
-                    <div class="product">
-                        <a href="https://dasxsport.vn/san-pham/xstorm-tre-em-copa-icon-xanh">
-                        <img src="https://dasxsport.vn/storage/day/dsc06527-min.jpg" alt="Xstorm Trẻ Em Copa Icon - Xanh trắng">
-                        <h4>Xstorm Trẻ Em Copa Icon - Xanh trắng</h4>
-                        <p>280.000₫</p>
-                        </a>
+                    <div class="left">
+                        <?php if($featured_tui): ?>
+                            <a href="product.php?id=<?= $featured_tui['id'] ?>">
+                                <img src="<?= htmlspecialchars($featured_tui['image']) ?>" alt="<?= htmlspecialchars($featured_tui['name']) ?>">
+                            </a>
+                        <?php else: ?>
+                            <p>Không có sản phẩm nào.</p>
+                        <?php endif; ?>
                     </div>
-
-                    <div class="product">
-                        <a href="https://dasxsport.vn/san-pham/xstorm-tre-em-copa-icon-2">
-                        <img src="https://dasxsport.vn/storage/day/dsc06510-min.jpg" alt="Xstorm Trẻ Em Copa Icon - Trắng đen cam">
-                        <h4>Xstorm Trẻ Em Copa Icon - Trắng đen cam</h4>
-                        <p>280.000₫</p>
-                        </a>
-                    </div>
-
-                    <div class="product">
-                        <a href="https://dasxsport.vn/san-pham/xstorm-tre-em-copa-icon-trang-do-den-1">
-                        <img src="https://dasxsport.vn/storage/day/dsc06495-min.jpg" alt="Xstorm Trẻ Em Copa Icon - Trắng xanh đen">
-                        <h4>Xstorm Trẻ Em Copa Icon - Trắng xanh đen</h4>
-                        <p>280.000₫</p>
-                        </a>
-                    </div>
-
-                    <div class="product">
-                        <a href="https://dasxsport.vn/san-pham/xstorm-tre-em-copa-icon-xanh">
-                        <img src="https://dasxsport.vn/storage/day/dsc06527-min.jpg" alt="Xstorm Trẻ Em Copa Icon - Xanh trắng">
-                        <h4>Xstorm Trẻ Em Copa Icon - Xanh trắng</h4>
-                        <p>280.000₫</p>
-                        </a>
-                    </div>
-
-                    <div class="product">
-                        <a href="https://dasxsport.vn/san-pham/xstorm-tre-em-copa-icon-xanh">
-                        <img src="https://dasxsport.vn/storage/day/dsc06527-min.jpg" alt="Xstorm Trẻ Em Copa Icon - Xanh trắng">
-                        <h4>Xstorm Trẻ Em Copa Icon - Xanh trắng</h4>
-                        <p>280.000₫</p>
-                        </a>
-                    </div>
-
-                    <!-- Lặp tương tự cho các sản phẩm còn lại -->
+                    <div class="right">
+                        <?php if(mysqli_num_rows($tui_products) > 0): ?>
+                            <?php while($row = mysqli_fetch_assoc($tui_products)): ?>
+                            <div class="product">
+                                <a href="product.php?id=<?= $row['id'] ?>">
+                                    <img src="<?= htmlspecialchars($row['image']) ?>" alt="<?= htmlspecialchars($row['name']) ?>">
+                                    <h4><?= htmlspecialchars($row['name']) ?></h4>
+                                    <p><?= number_format($row['price'], 0, ',', '.') ?>₫</p>
+                                </a>
+                            </div>
+                        <?php endwhile; ?>
+                        <?php else: ?>
+                            <p>Không có sản phẩm nào.</p>
+                        <?php endif; ?>
                     </div>
                 </div>
             </div>
@@ -215,51 +202,29 @@ $products = mysqli_query($link, $product_sql);
                 </div>
 
                 <div class="content-row">
-                <div class="left">
-                    Content1
-                </div>
-                <div class="right">
-                    <div class="product">
-                        <a href="https://dasxsport.vn/san-pham/xstorm-tre-em-copa-icon-xanh">
-                        <img src="https://dasxsport.vn/storage/day/dsc06527-min.jpg" alt="Xstorm Trẻ Em Copa Icon - Xanh trắng">
-                        <h4>Xstorm Trẻ Em Copa Icon - Xanh trắng</h4>
-                        <p>280.000₫</p>
-                        </a>
+                    <div class="left">
+                        <?php if($featured_giay): ?>
+                            <a href="product.php?id=<?= $featured_giay['id'] ?>">
+                                <img src="<?= htmlspecialchars($featured_giay['image']) ?>" alt="<?= htmlspecialchars($featured_giay['name']) ?>">
+                            </a>
+                        <?php else: ?>
+                            <p>Không có sản phẩm nào.</p>
+                        <?php endif; ?>
                     </div>
-
-                    <div class="product">
-                        <a href="https://dasxsport.vn/san-pham/xstorm-tre-em-copa-icon-2">
-                        <img src="https://dasxsport.vn/storage/day/dsc06510-min.jpg" alt="Xstorm Trẻ Em Copa Icon - Trắng đen cam">
-                        <h4>Xstorm Trẻ Em Copa Icon - Trắng đen cam</h4>
-                        <p>280.000₫</p>
-                        </a>
-                    </div>
-
-                    <div class="product">
-                        <a href="https://dasxsport.vn/san-pham/xstorm-tre-em-copa-icon-trang-do-den-1">
-                        <img src="https://dasxsport.vn/storage/day/dsc06495-min.jpg" alt="Xstorm Trẻ Em Copa Icon - Trắng xanh đen">
-                        <h4>Xstorm Trẻ Em Copa Icon - Trắng xanh đen</h4>
-                        <p>280.000₫</p>
-                        </a>
-                    </div>
-
-                    <div class="product">
-                        <a href="https://dasxsport.vn/san-pham/xstorm-tre-em-copa-icon-xanh">
-                        <img src="https://dasxsport.vn/storage/day/dsc06527-min.jpg" alt="Xstorm Trẻ Em Copa Icon - Xanh trắng">
-                        <h4>Xstorm Trẻ Em Copa Icon - Xanh trắng</h4>
-                        <p>280.000₫</p>
-                        </a>
-                    </div>
-
-                    <div class="product">
-                        <a href="https://dasxsport.vn/san-pham/xstorm-tre-em-copa-icon-xanh">
-                        <img src="https://dasxsport.vn/storage/day/dsc06527-min.jpg" alt="Xstorm Trẻ Em Copa Icon - Xanh trắng">
-                        <h4>Xstorm Trẻ Em Copa Icon - Xanh trắng</h4>
-                        <p>280.000₫</p>
-                        </a>
-                    </div>
-
-                    <!-- Lặp tương tự cho các sản phẩm còn lại -->
+                    <div class="right">
+                        <?php if(mysqli_num_rows($giay_products) > 0): ?>
+                            <?php while($row = mysqli_fetch_assoc($giay_products)): ?>
+                            <div class="product">
+                                <a href="product.php?id=<?= $row['id'] ?>">
+                                    <img src="<?= htmlspecialchars($row['image']) ?>" alt="<?= htmlspecialchars($row['name']) ?>">
+                                    <h4><?= htmlspecialchars($row['name']) ?></h4>
+                                    <p><?= number_format($row['price'], 0, ',', '.') ?>₫</p>
+                                </a>
+                            </div>
+                        <?php endwhile; ?>
+                        <?php else: ?>
+                            <p>Không có sản phẩm nào.</p>
+                        <?php endif; ?>
                     </div>
                 </div>
             </div>
