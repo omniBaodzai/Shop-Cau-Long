@@ -1,0 +1,377 @@
+-- Tạo cơ sở dữ liệu với bộ ký tự UTF8MB4 để hỗ trợ Unicode tốt hơn
+CREATE DATABASE IF NOT EXISTS ltw_shop_cau_long
+CHARACTER SET utf8mb4
+COLLATE utf8mb4_unicode_ci;
+
+-- Sử dụng cơ sở dữ liệu vừa tạo
+USE ltw_shop_cau_long;
+
+-- Bảng: users
+-- Lưu trữ thông tin người dùng (khách hàng)
+CREATE TABLE IF NOT EXISTS users (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(255) NOT NULL COMMENT 'Họ và tên người dùng',
+    email VARCHAR(255) NOT NULL UNIQUE COMMENT 'Email người dùng, duy nhất',
+    phone VARCHAR(15) NOT NULL COMMENT 'Số điện thoại người dùng',
+    password VARCHAR(255) NOT NULL COMMENT 'Mật khẩu (đã mã hóa)',
+    address VARCHAR(255) DEFAULT NULL COMMENT 'Địa chỉ chi tiết',
+    city VARCHAR(100) DEFAULT NULL COMMENT 'Thành phố',
+    district VARCHAR(100) DEFAULT NULL COMMENT 'Quận/Huyện',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT 'Thời gian tạo tài khoản',
+    INDEX idx_email (email) COMMENT 'Index để tối ưu tìm kiếm theo email'
+);
+
+-- Bảng: admin
+-- Lưu trữ thông tin quản trị viên
+CREATE TABLE IF NOT EXISTS admin (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    username VARCHAR(255) NOT NULL UNIQUE COMMENT 'Tên đăng nhập quản trị viên, duy nhất',
+    password VARCHAR(255) NOT NULL COMMENT 'Mật khẩu quản trị viên (đã mã hóa)',
+    email VARCHAR(255) NOT NULL UNIQUE COMMENT 'Địa chỉ email quản trị viên, duy nhất',
+    phone VARCHAR(20) NOT NULL UNIQUE COMMENT 'Số điện thoại quản trị viên, duy nhất'
+);
+
+-- Bảng: products
+-- Lưu trữ thông tin sản phẩm
+CREATE TABLE IF NOT EXISTS products (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(255) NOT NULL COMMENT 'Tên sản phẩm',
+    image VARCHAR(255) NOT NULL COMMENT 'Đường dẫn hình ảnh sản phẩm',
+    price DECIMAL(10, 2) NOT NULL COMMENT 'Giá bán hiện tại',
+    old_price DECIMAL(10, 2) DEFAULT NULL COMMENT 'Giá gốc trước khuyến mãi',
+    sku VARCHAR(50) NOT NULL UNIQUE COMMENT 'Mã sản phẩm, duy nhất',
+    brand VARCHAR(100) DEFAULT NULL COMMENT 'Thương hiệu sản phẩm',
+    category VARCHAR(100) NOT NULL COMMENT 'Danh mục sản phẩm',
+    warranty VARCHAR(50) DEFAULT NULL COMMENT 'Thông tin bảo hành',
+    stock INT NOT NULL DEFAULT 0 COMMENT 'Số lượng tồn kho',
+    description TEXT DEFAULT NULL COMMENT 'Mô tả sản phẩm',
+    specs TEXT DEFAULT NULL COMMENT 'Thông số kỹ thuật',
+    promotion VARCHAR(255) DEFAULT NULL COMMENT 'Thông tin khuyến mãi',
+    INDEX idx_sku (sku) COMMENT 'Index để tối ưu tìm kiếm theo mã sản phẩm',
+    INDEX idx_category (category) COMMENT 'Index để tối ưu tìm kiếm theo danh mục'
+);
+
+-- Bảng: inventory
+-- Quản lý tồn kho và giá nhập sản phẩm
+CREATE TABLE IF NOT EXISTS inventory (
+    product_id INT PRIMARY KEY COMMENT 'ID sản phẩm, khóa ngoại liên kết với bảng products',
+    import_price DECIMAL(10, 2) DEFAULT 0 COMMENT 'Giá nhập sản phẩm',
+    min_stock INT DEFAULT 5 COMMENT 'Số lượng tồn kho tối thiểu',
+    FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE
+);
+
+-- Bảng: orders
+-- Lưu trữ thông tin đơn hàng
+CREATE TABLE IF NOT EXISTS orders (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL COMMENT 'ID người dùng, khóa ngoại',
+    full_name VARCHAR(255) NOT NULL COMMENT 'Họ và tên người nhận',
+    phone VARCHAR(15) NOT NULL COMMENT 'Số điện thoại người nhận',
+    email VARCHAR(255) NOT NULL COMMENT 'Email người nhận',
+    address VARCHAR(255) NOT NULL COMMENT 'Địa chỉ giao hàng',
+    city VARCHAR(100) NOT NULL COMMENT 'Thành phố giao hàng',
+    district VARCHAR(100) NOT NULL COMMENT 'Quận/Huyện giao hàng',
+    payment_method ENUM('COD', 'Bank') NOT NULL DEFAULT 'COD' COMMENT 'Phương thức thanh toán',
+    total_price DECIMAL(10, 2) NOT NULL COMMENT 'Tổng giá trị sản phẩm',
+    shipping_fee DECIMAL(10, 2) NOT NULL COMMENT 'Phí vận chuyển',
+    final_total DECIMAL(10, 2) NOT NULL COMMENT 'Tổng tiền cuối cùng (bao gồm phí vận chuyển)',
+    order_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT 'Thời gian đặt hàng',
+    status ENUM('Chờ xử lý', 'Đang xử lý', 'Đã giao', 'Hủy') DEFAULT 'Chờ xử lý' COMMENT 'Trạng thái đơn hàng',
+    payment_status ENUM('Chưa thanh toán', 'Đã thanh toán', 'Hoàn tiền') DEFAULT 'Chưa thanh toán' COMMENT 'Trạng thái thanh toán',
+    note TEXT DEFAULT NULL COMMENT 'Ghi chú đơn hàng',
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    INDEX idx_user_id (user_id) COMMENT 'Index để tối ưu tìm kiếm theo user_id',
+    INDEX idx_order_date (order_date) COMMENT 'Index để tối ưu tìm kiếm theo ngày đặt hàng'
+);
+
+-- Bảng: order_items
+-- Lưu trữ chi tiết các sản phẩm trong đơn hàng
+CREATE TABLE IF NOT EXISTS order_items (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    order_id INT NOT NULL COMMENT 'ID đơn hàng, khóa ngoại',
+    product_id INT NOT NULL COMMENT 'ID sản phẩm, khóa ngoại',
+    product_name VARCHAR(255) NOT NULL COMMENT 'Tên sản phẩm tại thời điểm đặt hàng',
+    serial_number VARCHAR(100) DEFAULT NULL COMMENT 'Mã số seri để kiểm tra bảo hành',
+    price DECIMAL(15, 2) NOT NULL COMMENT 'Giá sản phẩm tại thời điểm đặt hàng',
+    quantity INT NOT NULL COMMENT 'Số lượng sản phẩm',
+    warranty_expire_date DATE DEFAULT NULL COMMENT 'Ngày hết hạn bảo hành',
+    FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE,
+    FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE
+);
+
+-- Bảng: reviews
+-- Lưu trữ đánh giá sản phẩm
+CREATE TABLE reviews (
+    id INT AUTO_INCREMENT PRIMARY KEY,        -- ID đánh giá (khóa chính)
+    product_id INT NOT NULL,                  -- ID sản phẩm (khóa ngoại)
+    user_name VARCHAR(255) NOT NULL,          -- Tên người dùng
+    rating INT NOT NULL CHECK (rating BETWEEN 1 AND 5), -- Số sao (1-5)
+    content TEXT NOT NULL,                    -- Nội dung đánh giá
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, -- Thời gian tạo đánh giá
+    FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE -- Liên kết với bảng products
+);
+
+
+-- Trigger: enforce_status_payment_constraint
+-- Đảm bảo trạng thái thanh toán là 'Đã thanh toán' khi đơn hàng có trạng thái 'Đã giao'
+DELIMITER //
+CREATE TRIGGER enforce_status_payment_constraint
+BEFORE INSERT ON orders
+FOR EACH ROW
+BEGIN
+    IF NEW.status = 'Đã giao' AND NEW.payment_status != 'Đã thanh toán' THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Khi trạng thái đơn hàng là "Đã giao", trạng thái thanh toán phải là "Đã thanh toán".';
+    END IF;
+END //
+DELIMITER ;
+
+-- Trigger: enforce_status_payment_constraint_update
+-- Áp dụng ràng buộc tương tự khi cập nhật trạng thái đơn hàng
+DELIMITER //
+CREATE TRIGGER enforce_status_payment_constraint_update
+BEFORE UPDATE ON orders
+FOR EACH ROW
+BEGIN
+    IF NEW.status = 'Đã giao' AND NEW.payment_status != 'Đã thanh toán' THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Khi trạng thái đơn hàng là "Đã giao", trạng thái thanh toán phải là "Đã thanh toán".';
+    END IF;
+END //
+DELIMITER ;
+
+-- Trigger: after_order_item_insert
+-- Giảm số lượng tồn kho khi thêm mục vào đơn hàng
+DELIMITER //
+CREATE TRIGGER after_order_item_insert
+AFTER INSERT ON order_items
+FOR EACH ROW
+BEGIN
+    UPDATE products
+    SET stock = stock - NEW.quantity
+    WHERE id = NEW.product_id;
+END //
+DELIMITER ;
+
+-- Trigger: after_order_item_delete
+-- Khôi phục số lượng tồn kho khi xóa mục đơn hàng
+DELIMITER //
+CREATE TRIGGER after_order_item_delete
+AFTER DELETE ON order_items
+FOR EACH ROW
+BEGIN
+    UPDATE products
+    SET stock = stock + OLD.quantity
+    WHERE id = OLD.product_id;
+END //
+DELIMITER ;
+
+-- Trigger: trg_set_import_price
+-- Tự động thiết lập giá nhập bằng 80% giá bán khi thêm bản ghi vào bảng inventory
+DELIMITER //
+CREATE TRIGGER trg_set_import_price
+BEFORE INSERT ON inventory
+FOR EACH ROW
+BEGIN
+    DECLARE productPrice DECIMAL(10, 2);
+    SELECT price INTO productPrice FROM products WHERE id = NEW.product_id;
+    SET NEW.import_price = productPrice * 0.8;
+END //
+DELIMITER ;
+
+-- Trigger: trg_after_insert_product
+-- Tự động thêm bản ghi vào bảng inventory khi sản phẩm mới được tạo
+DELIMITER //
+CREATE TRIGGER trg_after_insert_product
+AFTER INSERT ON products
+FOR EACH ROW
+BEGIN
+    INSERT INTO inventory (product_id, import_price, min_stock)
+    VALUES (NEW.id, NEW.price * 0.8, 5);
+END //
+DELIMITER ;
+
+-- Chèn dữ liệu vào bảng inventory cho các sản phẩm hiện có
+INSERT INTO inventory (product_id, import_price, min_stock)
+SELECT id, price * 0.8, 5
+FROM products
+WHERE id NOT IN (SELECT product_id FROM inventory);
+
+-- Trigger bổ sung: check_stock_before_order
+-- Kiểm tra số lượng tồn kho trước khi thêm mục vào đơn hàng
+DELIMITER //
+CREATE TRIGGER check_stock_before_order
+BEFORE INSERT ON order_items
+FOR EACH ROW
+BEGIN
+    DECLARE current_stock INT;
+    SELECT stock INTO current_stock FROM products WHERE id = NEW.product_id;
+    IF current_stock < NEW.quantity THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Số lượng tồn kho không đủ để thực hiện đơn hàng.';
+    END IF;
+END //
+DELIMITER ;
+
+-- Trigger bổ sung: update_warranty_expire_date
+-- Tự động tính ngày hết hạn bảo hành dựa trên thời gian bảo hành của sản phẩm
+DELIMITER //
+CREATE TRIGGER update_warranty_expire_date
+BEFORE INSERT ON order_items
+FOR EACH ROW
+BEGIN
+    DECLARE warranty_period VARCHAR(50);
+    DECLARE warranty_months INT;
+    SELECT warranty INTO warranty_period FROM products WHERE id = NEW.product_id;
+    IF warranty_period IS NOT NULL AND warranty_period REGEXP '^[0-9]+' THEN
+        SET warranty_months = CAST(SUBSTRING(warranty_period, 1, REGEXP_INSTR(warranty_period, '[^0-9]') - 1) AS UNSIGNED);
+        SET NEW.warranty_expire_date = DATE_ADD(CURDATE(), INTERVAL warranty_months MONTH);
+    END IF;
+END //
+DELIMITER ;
+
+INSERT INTO products (name, image, price, old_price, sku, brand, category, warranty, stock, description, specs, promotion) VALUES
+('Giày cầu lông Taro TR024-2', 'https://cdn.shopvnb.com/img/300x300/uploads/san_pham/giay-cau-long-taro-tr024-2_1732240309.webp', 499000.00, 499000.00, 'TARO-GI001', 'Taro', 'Giày cầu lông', '12 tháng', 100, 'Sản phẩm Giày cầu lông Taro TR024-2 chất lượng cao.', 'Thông số kỹ thuật chi tiết sẽ được cập nhật sớm.', 'Không có ưu đãi'),
+('Giày cầu lông Taro TR024-1', 'https://cdn.shopvnb.com/img/300x300/uploads/san_pham/giay-cau-long-taro-tr024-1_1732240510.webp', 499000.00, 499000.00, 'TARO-GI002', 'Taro', 'Giày cầu lông', '12 tháng', 100, 'Sản phẩm Giày cầu lông Taro TR024-1 chất lượng cao.', 'Thông số kỹ thuật chi tiết sẽ được cập nhật sớm.', 'Không có ưu đãi'),
+('Giày cầu lông Yonex Power Cushion Comfort Z3 Women', 'https://cdn.shopvnb.com/img/300x300/uploads/san_pham/giay-cau-long-yonex-power-cushion-comfort-z3-women_1749001676.webp', 2799000.00, 2799000.00, 'YONEX-GI001', 'Yonex', 'Giày cầu lông', '12 tháng', 100, 'Sản phẩm Giày cầu lông Yonex Power Cushion Comfort Z3 Women chất lượng cao.', 'Thông số kỹ thuật chi tiết sẽ được cập nhật sớm.', 'Không có ưu đãi'),
+('Giày cầu lông Victor A970NL CPS', 'https://cdn.shopvnb.com/img/300x300/uploads/san_pham/giay-cau-long-victor-a970nl-cps_1746645623.webp', 2490000.00, 2490000.00, 'VICTOR-GI001', 'Victor', 'Giày cầu lông', '12 tháng', 100, 'Sản phẩm Giày cầu lông Victor A970NL CPS chất lượng cao.', 'Thông số kỹ thuật chi tiết sẽ được cập nhật sớm.', 'Không có ưu đãi'),
+('Giày cầu lông Asics Gel-Rocket 12', 'https://cdn.shopvnb.com/img/300x300/uploads/san_pham/giay-cau-long-asics-gel-rocket-12_1749255525.webp', 1749000.00, 1749000.00, 'ASICS-GI001', 'Asics', 'Giày cầu lông', '12 tháng', 100, 'Sản phẩm Giày cầu lông Asics Gel-Rocket 12 chất lượng cao.', 'Thông số kỹ thuật chi tiết sẽ được cập nhật sớm.', 'Không có ưu đãi'),
+('Giày cầu lông Victor A396 A', 'https://cdn.shopvnb.com/img/300x300/uploads/san_pham/giay-cau-long-victor-a396-a-trang-chinh-hang_1746154061.webp', 1290000.00, 1290000.00, 'VICTOR-GI002', 'Victor', 'Giày cầu lông', '12 tháng', 100, 'Sản phẩm Giày cầu lông Victor A396 A chất lượng cao.', 'Thông số kỹ thuật chi tiết sẽ được cập nhật sớm.', 'Không có ưu đãi'),
+('Giày cầu lông Victor P8500Nlite AT', 'https://cdn.shopvnb.com/img/300x300/uploads/san_pham/giay-cau-long-victor-p8500nlite-at-trang-tim-chinh-hang_1746147173.webp', 2390000.00, 2390000.00, 'VICTOR-GI003', 'Victor', 'Giày cầu lông', '12 tháng', 100, 'Sản phẩm Giày cầu lông Victor P8500Nlite AT chất lượng cao.', 'Thông số kỹ thuật chi tiết sẽ được cập nhật sớm.', 'Không có ưu đãi'),
+('Giày Cầu Lông Kawasaki 065', 'https://cdn.shopvnb.com/img/300x300/uploads/san_pham/giay-cau-long-kawasaki-065_1745629100.webp', 880000.00, 880000.00, 'KAWASAKI-GI001', 'Kawasaki', 'Giày cầu lông', '12 tháng', 100, 'Sản phẩm Giày Cầu Lông Kawasaki 065 chất lượng cao.', 'Thông số kỹ thuật chi tiết sẽ được cập nhật sớm.', 'Không có ưu đãi'),
+('Giày Cầu Lông Kumpoo KH-E311', 'https://cdn.shopvnb.com/img/300x300/uploads/san_pham/giay-cau-long-kumpoo-kh-e311_1745607587.webp', 850000.00, 850000.00, 'KUMPOO-GI001', 'Kumpoo', 'Giày cầu lông', '12 tháng', 100, 'Sản phẩm Giày Cầu Lông Kumpoo KH-E311 chất lượng cao.', 'Thông số kỹ thuật chi tiết sẽ được cập nhật sớm.', 'Không có ưu đãi'),
+('Giày Cầu Lông Kumpoo KH-E303', 'https://cdn.shopvnb.com/img/300x300/uploads/san_pham/giay-cau-long-kumpoo-kh-e303_1745605077.webp', 690000.00, 690000.00, 'KUMPOO-GI002', 'Kumpoo', 'Giày cầu lông', '12 tháng', 100, 'Sản phẩm Giày Cầu Lông Kumpoo KH-E303 chất lượng cao.', 'Thông số kỹ thuật chi tiết sẽ được cập nhật sớm.', 'Không có ưu đãi'),
+('Giày cầu lông Lining AYTU001-7 chính hãng', 'https://cdn.shopvnb.com/img/300x300/uploads/gallery/giay-cau-long-lining-aytu001-7-chinh-hang_1745634736.webp', 1200000.00, 1200000.00, 'LINING-GI001', 'Lining', 'Giày cầu lông', '12 tháng', 100, 'Sản phẩm Giày cầu lông Lining AYTU001-7 chính hãng chất lượng cao.', 'Thông số kỹ thuật chi tiết sẽ được cập nhật sớm.', 'Không có ưu đãi'),
+('Giày cầu lông Lining AYZU001-1 chính hãng', 'https://cdn.shopvnb.com/img/300x300/uploads/gallery/giay-cau-long-lining-ayzu001-1-chinh-hang_1745634212.webp', 2600000.00, 2600000.00, 'LINING-GI002', 'Lining', 'Giày cầu lông', '12 tháng', 100, 'Sản phẩm Giày cầu lông Lining AYZU001-1 chính hãng chất lượng cao.', 'Thông số kỹ thuật chi tiết sẽ được cập nhật sớm.', 'Không có ưu đãi'),
+('Giày cầu lông Lining AYZU015-1 chính hãng', 'https://cdn.shopvnb.com/img/300x300/uploads/gallery/giay-cau-long-lining-ayzu015-1-chinh-hang_1745633695.webp', 2500000.00, 2500000.00, 'LINING-GI003', 'Lining', 'Giày cầu lông', '12 tháng', 100, 'Sản phẩm Giày cầu lông Lining AYZU015-1 chính hãng chất lượng cao.', 'Thông số kỹ thuật chi tiết sẽ được cập nhật sớm.', 'Không có ưu đãi'),
+('Giày cầu lông Lining AYAU005-1 chính hãng', 'https://cdn.shopvnb.com/img/300x300/uploads/gallery/giay-cau-long-lining-ayau005-1-chinh-hang_1745633560.webp', 2150000.00, 2150000.00, 'LINING-GI004', 'Lining', 'Giày cầu lông', '12 tháng', 100, 'Sản phẩm Giày cầu lông Lining AYAU005-1 chính hãng chất lượng cao.', 'Thông số kỹ thuật chi tiết sẽ được cập nhật sớm.', 'Không có ưu đãi'),
+('Giày Cầu Lông Kumpoo KH-J06 Đen Chính Hãng', 'https://cdn.shopvnb.com/img/300x300/uploads/gallery/giay-cau-long-kumpoo-kh-j06-den-chinh-hang_1745349435.webp', 720000.00, 720000.00, 'KUMPOO-GI003', 'Kumpoo', 'Giày cầu lông', '12 tháng', 100, 'Sản phẩm Giày Cầu Lông Kumpoo KH-J06 Đen Chính Hãng chất lượng cao.', 'Thông số kỹ thuật chi tiết sẽ được cập nhật sớm.', 'Không có ưu đãi'),
+('Giày cầu lông Victor Doraemon P-DRMJR A', 'https://cdn.shopvnb.com/img/300x300/uploads/san_pham/giay-cau-long-victor-doraemon-p-drmjr-a-trang-noi-dia-trung_1744576775.webp', 1500000.00, 1500000.00, 'VICTOR-GI004', 'Victor', 'Giày cầu lông', '12 tháng', 100, 'Sản phẩm Giày cầu lông Victor Doraemon P-DRMJR A chất lượng cao.', 'Thông số kỹ thuật chi tiết sẽ được cập nhật sớm.', 'Không có ưu đãi'),
+('Giày Cầu Lông Kumpoo KH-G712', 'https://cdn.shopvnb.com/img/300x300/uploads/san_pham/giay-cau-long-kumpoo-kh-g712_1743042179.webp', 1580000.00, 1580000.00, 'KUMPOO-GI004', 'Kumpoo', 'Giày cầu lông', '12 tháng', 100, 'Sản phẩm Giày Cầu Lông Kumpoo KH-G712 chất lượng cao.', 'Thông số kỹ thuật chi tiết sẽ được cập nhật sớm.', 'Không có ưu đãi'),
+('Giày cầu lông Yonex Skill 5', 'https://cdn.shopvnb.com/img/300x300/uploads/san_pham/giay-cau-long-yonex-skill-5_1743042561.webp', 939000.00, 939000.00, 'YONEX-GI002', 'Yonex', 'Giày cầu lông', '12 tháng', 100, 'Sản phẩm Giày cầu lông Yonex Skill 5 chất lượng cao.', 'Thông số kỹ thuật chi tiết sẽ được cập nhật sớm.', 'Không có ưu đãi'),
+('Giày cầu lông Lining AYTV003-1', 'https://cdn.shopvnb.com/img/300x300/uploads/san_pham/giay-cau-long-lining-aytv003-1-trang-hong-noi-dia-trung_1742585959.webp', 1549000.00, 1549000.00, 'LINING-GI005', 'Lining', 'Giày cầu lông', '12 tháng', 100, 'Sản phẩm Giày cầu lông Lining AYTV003-1 chất lượng cao.', 'Thông số kỹ thuật chi tiết sẽ được cập nhật sớm.', 'Không có ưu đãi'),
+('Giày cầu lông Lining AYTV003-2', 'https://cdn.shopvnb.com/img/300x300/uploads/san_pham/giay-cau-long-lining-aytv003-2-xanh-den-noi-dia-trung_1742585942.webp', 1549000.00, 1549000.00, 'LINING-GI006', 'Lining', 'Giày cầu lông', '12 tháng', 100, 'Sản phẩm Giày cầu lông Lining AYTV003-2 chất lượng cao.', 'Thông số kỹ thuật chi tiết sẽ được cập nhật sớm.', 'Không có ưu đãi'),
+('Áo cầu lông Yonex RM2897 - Jet Black chính hãng', 'https://cdn.shopvnb.com/img/300x300/uploads/gallery/ao-cau-long-yonex-rm2897-jet-black-chinh-hang_1745782789.webp', 139000.00, 139000.00, 'YONEX-AO001', 'Yonex', 'Áo cầu lông', '12 tháng', 100, 'Sản phẩm Áo cầu lông Yonex RM2897 - Jet Black chính hãng chất lượng cao.', 'Thông số kỹ thuật chi tiết sẽ được cập nhật sớm.', 'Không có ưu đãi'),
+('Áo cầu lông Yonex RM2897 - White chính hãng', 'https://cdn.shopvnb.com/img/300x300/uploads/gallery/ao-cau-long-yonex-rm2897-white-chinh-hang_1745782198.webp', 139000.00, 139000.00, 'YONEX-AO002', 'Yonex', 'Áo cầu lông', '12 tháng', 100, 'Sản phẩm Áo cầu lông Yonex RM2897 - White chính hãng chất lượng cao.', 'Thông số kỹ thuật chi tiết sẽ được cập nhật sớm.', 'Không có ưu đãi'),
+('Áo cầu lông Yonex RM2890 - Steel Gray chính hãng', 'https://cdn.shopvnb.com/img/300x300/uploads/gallery/ao-cau-long-yonex-rm2890-steel-gray-chinh-hang_1746212023.webp', 129000.00, 129000.00, 'YONEX-AO003', 'Yonex', 'Áo cầu lông', '12 tháng', 100, 'Sản phẩm Áo cầu lông Yonex RM2890 - Steel Gray chính hãng chất lượng cao.', 'Thông số kỹ thuật chi tiết sẽ được cập nhật sớm.', 'Không có ưu đãi'),
+('Áo cầu lông Yonex RM2890 - Spearmint chính hãng', 'https://cdn.shopvnb.com/img/300x300/uploads/gallery/ao-cau-long-yonex-rm2890-spearmint-chinh-hang_1746211543.webp', 129000.00, 129000.00, 'YONEX-AO004', 'Yonex', 'Áo cầu lông', '12 tháng', 100, 'Sản phẩm Áo cầu lông Yonex RM2890 - Spearmint chính hãng chất lượng cao.', 'Thông số kỹ thuật chi tiết sẽ được cập nhật sớm.', 'Không có ưu đãi'),
+('Áo cầu lông Victor T-40009D - Đỏ chính hãng', 'https://cdn.shopvnb.com/img/300x300/uploads/gallery/ao-cau-long-victor-t-40009d-do-chinh-hang_1748478143.webp', 250000.00, 250000.00, 'VICTOR-AO001', 'Victor', 'Áo cầu lông', '12 tháng', 100, 'Sản phẩm Áo cầu lông Victor T-40009D - Đỏ chính hãng chất lượng cao.', 'Thông số kỹ thuật chi tiết sẽ được cập nhật sớm.', 'Không có ưu đãi'),
+('Áo cầu lông Yonex T62 Nam - Trắng', 'https://cdn.shopvnb.com/img/300x300/uploads/gallery/ao-cau-long-yonex-t62-nam-trang_1745799208.webp', 130000.00, 130000.00, 'YONEX-AO005', 'Yonex', 'Áo cầu lông', '12 tháng', 100, 'Sản phẩm Áo cầu lông Yonex T62 Nam - Trắng chất lượng cao.', 'Thông số kỹ thuật chi tiết sẽ được cập nhật sớm.', 'Không có ưu đãi'),
+('Áo cầu lông Yonex T63 Nam - Xanh', 'https://cdn.shopvnb.com/img/300x300/uploads/gallery/ao-cau-long-yonex-t63-nam-xanh_1745799056.webp', 140000.00, 140000.00, 'YONEX-AO006', 'Yonex', 'Áo cầu lông', '12 tháng', 100, 'Sản phẩm Áo cầu lông Yonex T63 Nam - Xanh chất lượng cao.', 'Thông số kỹ thuật chi tiết sẽ được cập nhật sớm.', 'Không có ưu đãi'),
+('Áo cầu lông Lining T72 Nam - Trắng', 'https://cdn.shopvnb.com/img/300x300/uploads/gallery/ao-cau-long-lining-t72-nam-trang_1745805181.webp', 140000.00, 140000.00, 'LINING-AO001', 'Lining', 'Áo cầu lông', '12 tháng', 100, 'Sản phẩm Áo cầu lông Lining T72 Nam - Trắng chất lượng cao.', 'Thông số kỹ thuật chi tiết sẽ được cập nhật sớm.', 'Không có ưu đãi'),
+('Áo cầu lông Victor A584 Nam - Xanh', 'https://cdn.shopvnb.com/img/300x300/uploads/gallery/ao-cau-long-victor-a584-nam-xanh_1745804955.webp', 130000.00, 130000.00, 'VICTOR-AO002', 'Victor', 'Áo cầu lông', '12 tháng', 100, 'Sản phẩm Áo cầu lông Victor A584 Nam - Xanh chất lượng cao.', 'Thông số kỹ thuật chi tiết sẽ được cập nhật sớm.', 'Không có ưu đãi'),
+('Áo cầu lông Victor A581 Nam - Đen', 'https://cdn.shopvnb.com/img/300x300/uploads/gallery/ao-cau-long-victor-a581-nam-den_1745804424.webp', 130000.00, 130000.00, 'VICTOR-AO003', 'Victor', 'Áo cầu lông', '12 tháng', 100, 'Sản phẩm Áo cầu lông Victor A581 Nam - Đen chất lượng cao.', 'Thông số kỹ thuật chi tiết sẽ được cập nhật sớm.', 'Không có ưu đãi'),
+('Áo cầu lông Yonex A575 Nam - Xanh', 'https://cdn.shopvnb.com/img/300x300/uploads/gallery/ao-cau-long-yonex-a575-nam-xanh_1745798778.webp', 140000.00, 140000.00, 'YONEX-AO007', 'Yonex', 'Áo cầu lông', '12 tháng', 100, 'Sản phẩm Áo cầu lông Yonex A575 Nam - Xanh chất lượng cao.', 'Thông số kỹ thuật chi tiết sẽ được cập nhật sớm.', 'Không có ưu đãi'),
+('Áo cầu lông Yonex A563 Nam - Đen', 'https://cdn.shopvnb.com/img/300x300/uploads/gallery/ao-cau-long-yonex-a563-nam-den_1745797837.webp', 130000.00, 130000.00, 'YONEX-AO008', 'Yonex', 'Áo cầu lông', '12 tháng', 100, 'Sản phẩm Áo cầu lông Yonex A563 Nam - Đen chất lượng cao.', 'Thông số kỹ thuật chi tiết sẽ được cập nhật sớm.', 'Không có ưu đãi'),
+('Áo cầu lông Yonex A553 Nam - Đen xanh', 'https://cdn.shopvnb.com/img/300x300/uploads/gallery/ao-cau-long-yonex-a553-nam-den-xanh_1745797675.webp', 130000.00, 130000.00, 'YONEX-AO009', 'Yonex', 'Áo cầu lông', '12 tháng', 100, 'Sản phẩm Áo cầu lông Yonex A553 Nam - Đen xanh chất lượng cao.', 'Thông số kỹ thuật chi tiết sẽ được cập nhật sớm.', 'Không có ưu đãi'),
+('Áo cầu lông Lining A535 Nam - Xanh', 'https://cdn.shopvnb.com/img/300x300/uploads/gallery/ao-cau-long-lining-a535-nam-xanh_1745804303.webp', 130000.00, 130000.00, 'LINING-AO002', 'Lining', 'Áo cầu lông', '12 tháng', 100, 'Sản phẩm Áo cầu lông Lining A535 Nam - Xanh chất lượng cao.', 'Thông số kỹ thuật chi tiết sẽ được cập nhật sớm.', 'Không có ưu đãi'),
+('Áo cầu lông Yonex A531 Nam - Trắng xanh', 'https://cdn.shopvnb.com/img/300x300/uploads/gallery/ao-cau-long-yonex-a531-nam-trang-xanh_1745797345.webp', 130000.00, 130000.00, 'YONEX-AO010', 'Yonex', 'Áo cầu lông', '12 tháng', 100, 'Sản phẩm Áo cầu lông Yonex A531 Nam - Trắng xanh chất lượng cao.', 'Thông số kỹ thuật chi tiết sẽ được cập nhật sớm.', 'Không có ưu đãi'),
+('Áo cầu lông Yonex A522 Nam - Trắng xanh', 'https://cdn.shopvnb.com/img/300x300/uploads/gallery/ao-cau-long-yonex-a522-nam-trang-xanh_1745790983.webp', 130000.00, 130000.00, 'YONEX-AO011', 'Yonex', 'Áo cầu lông', '12 tháng', 100, 'Sản phẩm Áo cầu lông Yonex A522 Nam - Trắng xanh chất lượng cao.', 'Thông số kỹ thuật chi tiết sẽ được cập nhật sớm.', 'Không có ưu đãi'),
+('Áo cầu lông Yonex A512 Nam - Đen', 'https://cdn.shopvnb.com/img/300x300/uploads/gallery/ao-cau-long-yonex-a512-nam-den_1745789519.webp', 130000.00, 130000.00, 'YONEX-AO012', 'Yonex', 'Áo cầu lông', '12 tháng', 100, 'Sản phẩm Áo cầu lông Yonex A512 Nam - Đen chất lượng cao.', 'Thông số kỹ thuật chi tiết sẽ được cập nhật sớm.', 'Không có ưu đãi'),
+('Áo cầu lông Victor A464 Nam - Đen', 'https://cdn.shopvnb.com/img/300x300/uploads/gallery/ao-cau-long-victor-a464-nam-den_1745804005.webp', 130000.00, 130000.00, 'VICTOR-AO004', 'Victor', 'Áo cầu lông', '12 tháng', 100, 'Sản phẩm Áo cầu lông Victor A464 Nam - Đen chất lượng cao.', 'Thông số kỹ thuật chi tiết sẽ được cập nhật sớm.', 'Không có ưu đãi'),
+('Áo cầu lông Yonex A570 Nam - Đen', 'https://cdn.shopvnb.com/img/300x300/uploads/gallery/ao-cau-long-yonex-a570-nam-den_1745787862.webp', 130000.00, 130000.00, 'YONEX-AO013', 'Yonex', 'Áo cầu lông', '12 tháng', 100, 'Sản phẩm Áo cầu lông Yonex A570 Nam - Đen chất lượng cao.', 'Thông số kỹ thuật chi tiết sẽ được cập nhật sớm.', 'Không có ưu đãi'),
+('Áo cầu lông Yonex RM2897 - PrimRose Yellow chính hãng', 'https://cdn.shopvnb.com/img/300x300/uploads/gallery/ao-cau-long-yonex-rm2897-primrose-yellow-chinh-hang_1745782356.webp', 139000.00, 139000.00, 'YONEX-AO014', 'Yonex', 'Áo cầu lông', '12 tháng', 100, 'Sản phẩm Áo cầu lông Yonex RM2897 - PrimRose Yellow chính hãng chất lượng cao.', 'Thông số kỹ thuật chi tiết sẽ được cập nhật sớm.', 'Không có ưu đãi'),
+('Băng gối Kawasaki KF - 3412', 'https://cdn.shopvnb.com/img/300x300/uploads/gallery/bang-goi-kawasaki-kf-3412_1748915199.webp', 250000.00, 250000.00, 'KAWASAKI-PK001', 'Kawasaki', 'Phụ kiện cầu lông', '12 tháng', 100, 'Sản phẩm Băng gối Kawasaki KF - 3412 chất lượng cao.', 'Thông số kỹ thuật chi tiết sẽ được cập nhật sớm.', 'Không có ưu đãi'),
+('Băng gối Kawasaki A3429', 'https://cdn.shopvnb.com/img/300x300/uploads/gallery/bang-goi-kawasaki-a3429_1748911820.webp', 350000.00, 350000.00, 'KAWASAKI-PK002', 'Kawasaki', 'Phụ kiện cầu lông', '12 tháng', 100, 'Sản phẩm Băng gối Kawasaki A3429 chất lượng cao.', 'Thông số kỹ thuật chi tiết sẽ được cập nhật sớm.', 'Không có ưu đãi'),
+('Băng gối Kawasaki B3439', 'https://cdn.shopvnb.com/img/300x300/uploads/gallery/bang-goi-kawasaki-b3439_1748911615.webp', 250000.00, 250000.00, 'KAWASAKI-PK003', 'Kawasaki', 'Phụ kiện cầu lông', '12 tháng', 100, 'Sản phẩm Băng gối Kawasaki B3439 chất lượng cao.', 'Thông số kỹ thuật chi tiết sẽ được cập nhật sớm.', 'Không có ưu đãi'),
+('Quấn cán vải Taro TR025-OG02 chính hãng', 'https://cdn.shopvnb.com/img/300x300/uploads/gallery/quan-can-vai-taro-tr025-og02-chinh-hang-1_1748543882.webp', 30000.00, 30000.00, 'TARO-PK001', 'Taro', 'Phụ kiện cầu lông', '12 tháng', 100, 'Sản phẩm Quấn cán vải Taro TR025-OG02 chính hãng chất lượng cao.', 'Thông số kỹ thuật chi tiết sẽ được cập nhật sớm.', 'Không có ưu đãi'),
+('Băng chặn mồ hôi Victor SP507 DBZ O chính hãng', 'https://cdn.shopvnb.com/img/300x300/uploads/gallery/bang-chan-mo-hoi-victor-sp507-dbz-o-chinh-hang-1_1749083181.webp', 100000.00, 100000.00, 'VICTOR-PK001', 'Victor', 'Phụ kiện cầu lông', '12 tháng', 100, 'Sản phẩm Băng chặn mồ hôi Victor SP507 DBZ O chính hãng chất lượng cao.', 'Thông số kỹ thuật chi tiết sẽ được cập nhật sớm.', 'Không có ưu đãi'),
+('Băng chặn mồ hôi Victor SP506 DBZ C chính hãng', 'https://cdn.shopvnb.com/img/300x300/uploads/gallery/bang-chan-mo-hoi-victor-sp506-dbz-c-chinh-hang_1749082911.webp', 100000.00, 100000.00, 'VICTOR-PK002', 'Victor', 'Phụ kiện cầu lông', '12 tháng', 100, 'Sản phẩm Băng chặn mồ h3oi Victor SP506 DBZ C chính hãng chất lượng cao.', 'Thông số kỹ thuật chi tiết sẽ được cập nhật sớm.', 'Không có ưu đãi'),
+('Vớ cầu lông Yonex ngắn 026 - Đen hồng', 'https://cdn.shopvnb.com/img/300x300/uploads/gallery/vo-cau-long-yonex-ngan-026-den-hong_1748914922.webp', 35000.00, 35000.00, 'YONEX-PK001', 'Yonex', 'Phụ kiện cầu lông', '12 tháng', 100, 'Sản phẩm Vớ cầu lông Yonex ngắn 026 - Đen hồng chất lượng cao.', 'Thông số kỹ thuật chi tiết sẽ được cập nhật sớm.', 'Không có ưu đãi'),
+('Vớ cầu lông Yonex ngắn 026 - Đen vàng', 'https://cdn.shopvnb.com/img/300x300/uploads/gallery/vo-cau-long-yonex-ngan-026-den-vang_1748914853.webp', 35000.00, 35000.00, 'YONEX-PK002', 'Yonex', 'Phụ kiện cầu lông', '12 tháng', 100, 'Sản phẩm Vớ cầu lông Yonex ngắn 026 - Đen vàng chất lượng cao.', 'Thông số kỹ thuật chi tiết sẽ được cập nhật sớm.', 'Không có ưu đãi'),
+('Ống Cầu Lông Taro C01', 'https://cdn.shopvnb.com/img/300x300/uploads/gallery/ong-cau-long-taro-c01_1748911487.webp', 270000.00, 270000.00, 'TARO-PK002', 'Taro', 'Ống cầu lông', '12 tháng', 100, 'Sản phẩm Ống Cầu Lông Taro C01 chất lượng cao.', 'Thông số kỹ thuật chi tiết sẽ được cập nhật sớm.', 'Không có ưu đãi'),
+('Quấn cán vải Taro TR025-TG01 chính hãng (cuộn)', 'https://cdn.shopvnb.com/img/300x300/uploads/gallery/quan-can-vai-taro-tr025-tg01-chinh-hang-cuon_1748546284.webp', 250000.00, 250000.00, 'TARO-PK003', 'Taro', 'Phụ kiện cầu lông', '12 tháng', 100, 'Sản phẩm Quấn cán vải Taro TR025-TG01 chính hãng (cuộn) chất lượng cao.', 'Thông số kỹ thuật chi tiết sẽ được cập nhật sớm.', 'Không có ưu đãi'),
+('Quấn cán vải Taro TR025-TG02 chính hãng (cuộn)', 'https://cdn.shopvnb.com/img/300x300/uploads/gallery/quan-can-vai-taro-tr025-tg02-chinh-hang-cuon_1748545661.webp', 350000.00, 350000.00, 'TARO-PK004', 'Taro', 'Phụ kiện cầu lông', '12 tháng', 100, 'Sản phẩm Quấn cán vải Taro TR025-TG02 chính hãng (cuộn) chất lượng cao.', 'Thông số kỹ thuật chi tiết sẽ được cập nhật sớm.', 'Không có ưu đãi'),
+('Quấn lót cán Taro TR025-CW01', 'https://cdn.shopvnb.com/img/300x300/uploads/gallery/quan-lot-can-taro-tr025-cw01_1748542915.webp', 80000.00, 80000.00, 'TARO-PK005', 'Taro', 'Phụ kiện cầu lông', '12 tháng', 100, 'Sản phẩm Quấn lót cán Taro TR025-CW01 chất lượng cao.', 'Thông số kỹ thuật chi tiết sẽ được cập nhật sớm.', 'Không có ưu đãi'),
+('Quấn cán vải Taro TR025-OG01 chính hãng', 'https://cdn.shopvnb.com/img/300x300/uploads/gallery/quan-can-vai-taro-tr025-og01-chinh-hang_1748543324.webp', 25000.00, 25000.00, 'TARO-PK006', 'Taro', 'Phụ kiện cầu lông', '12 tháng', 100, 'Sản phẩm Quấn cán vải Taro TR025-OG01 chính hãng chất lượng cao.', 'Thông số kỹ thuật chi tiết sẽ được cập nhật sớm.', 'Không có ưu đãi'),
+('Ống Cầu Lông VBCS', 'https://cdn.shopvnb.com/img/300x300/uploads/gallery/ong-cau-long-vbcs-pro_1748630815.webp', 260000.00, 260000.00, 'VBCS-PK001', 'VBCS', 'Ống cầu lông', '12 tháng', 100, 'Sản phẩm Ống Cầu Lông VBCS chất lượng cao.', 'Thông số kỹ thuật chi tiết sẽ được cập nhật sớm.', 'Không có ưu đãi'),
+('Băng gối dán Taro TR025-B01 chính hãng', 'https://cdn.shopvnb.com/img/300x300/uploads/gallery/bang-goi-dan-taro-tr025-b01-chinh-hang_1747599633.webp', 210000.00, 210000.00, 'TARO-PK007', 'Taro', 'Phụ kiện cầu lông', '12 tháng', 100, 'Sản phẩm Băng gối dán Taro TR025-B01 chính hãng chất lượng cao.', 'Thông số kỹ thuật chi tiết sẽ được cập nhật sớm.', 'Không có ưu đãi'),
+('Phấn Taro hút mồ hôi tay TR025-P01', 'https://cdn.shopvnb.com/img/300x300/uploads/gallery/phan-taro-hut-mo-hoi-tay-tr025-p01_1746664285.webp', 55000.00, 55000.00, 'TARO-PK008', 'Taro', 'Phụ kiện cầu lông', '12 tháng', 100, 'Sản phẩm Phấn Taro hút mồ hôi tay TR025-P01 chất lượng cao.', 'Thông số kỹ thuật chi tiết sẽ được cập nhật sớm.', 'Không có ưu đãi'),
+('Bóng tập cổ tay Power Ball Taro TR025-B01', 'https://cdn.shopvnb.com/img/300x300/uploads/gallery/bong-tap-co-tay-power-ball-taro-tr025-b01_1746664031.webp', 250000.00, 250000.00, 'TARO-PK009', 'Taro', 'Phụ kiện cầu lông', '12 tháng', 100, 'Sản phẩm Bóng tập cổ tay Power Ball Taro TR025-B01 chất lượng cao.', 'Thông số kỹ thuật chi tiết sẽ được cập nhật sớm.', 'Không có ưu đãi'),
+('Vớ cầu lông Taro TR021-02 dài - Xanh biển chính hãng', 'https://cdn.shopvnb.com/img/300x300/uploads/gallery/vo-cau-long-taro-tr021-02-dai-xanh-duong-chinh-hang_1748475588.webp', 45000.00, 45000.00, 'TARO-PK010', 'Taro', 'Phụ kiện cầu lông', '12 tháng', 100, 'Sản phẩm Vớ cầu lông Taro TR021-02 dài - Xanh biển chính hãng chất lượng cao.', 'Thông số kỹ thuật chi tiết sẽ được cập nhật sớm.', 'Không có ưu đãi'),
+('Khăn cầu lông Yonex AC1081YX', 'https://cdn.shopvnb.com/img/300x300/uploads/gallery/khan-cau-long-yonex-ac1081yx-deep-sea-chinh-hang_1746470840.webp', 539000.00, 539000.00, 'YONEX-PK003', 'Yonex', 'Phụ kiện cầu lông', '12 tháng', 100, 'Sản phẩm Khăn cầu lông Yonex AC1081YX chất lượng cao.', 'Thông số kỹ thuật chi tiết sẽ được cập nhật sớm.', 'Không có ưu đãi'),
+('Ống cầu lông Yonex AS10', 'https://cdn.shopvnb.com/img/300x300/uploads/gallery/ong-cau-long-yonex-as10_1746472471.webp', 609000.00, 609000.00, 'YONEX-PK004', 'Yonex', 'Ống cầu lông', '12 tháng', 100, 'Sản phẩm Ống cầu lông Yonex AS10 chất lượng cao.', 'Thông số kỹ thuật chi tiết sẽ được cập nhật sớm.', 'Không có ưu đãi'),
+('Túi Cầu Lông Taro TR024-BAG01', 'https://cdn.shopvnb.com/img/300x300/uploads/san_pham/tui-cau-long-taro-tr024-bag01_1738702338.webp', 599000.00, 599000.00, 'TARO-PK011', 'Taro', 'Phụ kiện cầu lông', '12 tháng', 100, 'Sản phẩm Túi Cầu Lông Taro TR024-BAG01 chất lượng cao.', 'Thông số kỹ thuật chi tiết sẽ được cập nhật sớm.', 'Không có ưu đãi'),
+('Túi cầu lông Yonex 92431 TRM (GC)', 'https://cdn.shopvnb.com/img/300x300/uploads/san_pham/tui-cau-long-yonex-92431-trm-gc_1748570778.webp', 839000.00, 839000.00, 'YONEX-PK005', 'Yonex', 'Phụ kiện cầu lông', '12 tháng', 100, 'Sản phẩm Túi cầu lông Yonex 92431 TRM (GC) chất lượng cao.', 'Thông số kỹ thuật chi tiết sẽ được cập nhật sớm.', 'Không có ưu đãi'),
+('Túi cầu lông Yonex 82426 (GC)', 'https://cdn.shopvnb.com/img/300x300/uploads/san_pham/tui-cau-long-yonex-82426-gc_1748569920.webp', 790000.00, 790000.00, 'YONEX-PK006', 'Yonex', 'Phụ kiện cầu lông', '12 tháng', 100, 'Sản phẩm Túi cầu lông Yonex 82426 (GC) chất lượng cao.', 'Thông số kỹ thuật chi tiết sẽ được cập nhật sớm.', 'Không có ưu đãi'),
+('Túi cầu lông Victor BR9615CPS J - Tím', 'https://cdn.shopvnb.com/img/300x300/uploads/gallery/tui-cau-long-victor-br9615cps-j-tim_1748461456.webp', 1590000.00, 1590000.00, 'VICTOR-PK003', 'Victor', 'Phụ kiện cầu lông', '12 tháng', 100, 'Sản phẩm Túi cầu lông Victor BR9615CPS J - Tím chất lượng cao.', 'Thông số kỹ thuật chi tiết sẽ được cập nhật sớm.', 'Không có ưu đãi'),
+('Túi cầu lông Victor BR9615CPS I - Đỏ', 'https://cdn.shopvnb.com/img/300x300/uploads/gallery/tui-cau-long-victor-br9615cps-i-do_1748461298.webp', 1590000.00, 1590000.00, 'VICTOR-PK004', 'Victor', 'Phụ kiện cầu lông', '12 tháng', 100, 'Sản phẩm Túi cầu lông Victor BR9615CPS I - Đỏ chất lượng cao.', 'Thông số kỹ thuật chi tiết sẽ được cập nhật sớm.', 'Không có ưu đãi'),
+('Túi cầu lông Yonex BA31PAEX (GC)', 'https://cdn.shopvnb.com/img/300x300/uploads/san_pham/tui-cau-long-yonex-ba31paex_1747947471.webp', 839000.00, 839000.00, 'YONEX-PK007', 'Yonex', 'Phụ kiện cầu lông', '12 tháng', 100, 'Sản phẩm Túi cầu lông Yonex BA31PAEX (GC) chất lượng cao.', 'Thông số kỹ thuật chi tiết sẽ được cập nhật sớm.', 'Không có ưu đãi'),
+('Túi cầu lông Victor 3641VR (GC)', 'https://cdn.shopvnb.com/img/300x300/uploads/san_pham/tui-cau-long-victor-3641vr-gc_1747944903.webp', 770000.00, 770000.00, 'VICTOR-PK005', 'Victor', 'Phụ kiện cầu lông', '12 tháng', 100, 'Sản phẩm Túi cầu lông Victor 3641VR (GC) chất lượng cao.', 'Thông số kỹ thuật chi tiết sẽ được cập nhật sớm.', 'Không có ưu đãi'),
+('Túi cầu lông Victor BG 31KT - Trắng xanh (GC)', 'https://cdn.shopvnb.com/img/300x300/uploads/gallery/tui-cau-long-victor-bg-31kt-trang-xanh-gc_1747881022.webp', 770000.00, 770000.00, 'VICTOR-PK006', 'Victor', 'Phụ kiện cầu lông', '12 tháng', 100, 'Sản phẩm Túi cầu lông Victor BG 31KT - Trắng xanh (GC) chất lượng cao.', 'Thông số kỹ thuật chi tiết sẽ được cập nhật sớm.', 'Không có ưu đãi'),
+('Túi cầu lông Victor BR2605', 'https://cdn.shopvnb.com/img/300x300/uploads/san_pham/tui-cau-long-victor-br2605_1745526948.webp', 800000.00, 800000.00, 'VICTOR-PK007', 'Victor', 'Phụ kiện cầu lông', '12 tháng', 100, 'Sản phẩm Túi cầu lông Victor BR2605 chất lượng cao.', 'Thông số kỹ thuật chi tiết sẽ được cập nhật sớm.', 'Không có ưu đãi'),
+('Túi cầu lông Victor BR5631', 'https://cdn.shopvnb.com/img/300x300/uploads/san_pham/tui-cau-long-victor-br5631_1745520440.webp', 1050000.00, 1050000.00, 'VICTOR-PK008', 'Victor', 'Phụ kiện cầu lông', '12 tháng', 100, 'Sản phẩm Túi cầu lông Victor BR5631 chất lượng cao.', 'Thông số kỹ thuật chi tiết sẽ được cập nhật sớm.', 'Không có ưu đãi'),
+('Túi cầu lông Victor BR5223', 'https://cdn.shopvnb.com/img/300x300/uploads/san_pham/tui-cau-long-victor-br5223_1745458617.webp', 950000.00, 950000.00, 'VICTOR-PK009', 'Victor', 'Phụ kiện cầu lông', '12 tháng', 100, 'Sản phẩm Túi cầu lông Victor BR5223 chất lượng cao.', 'Thông số kỹ thuật chi tiết sẽ được cập nhật sớm.', 'Không có ưu đãi'),
+('Túi cầu lông Victor BR2603H', 'https://cdn.shopvnb.com/img/300x300/uploads/san_pham/tui-cau-long-victor-br2603h-trang-kem_1745457543.webp', 750000.00, 750000.00, 'VICTOR-PK010', 'Victor', 'Phụ kiện cầu lông', '12 tháng', 100, 'Sản phẩm Túi cầu lông Victor BR2603H chất lượng cao.', 'Thông số kỹ thuật chi tiết sẽ được cập nhật sớm.', 'Không có ưu đãi'),
+('Túi cầu lông Victor BR2603B', 'https://cdn.shopvnb.com/img/300x300/uploads/san_pham/tui-cau-long-victor-br2603b-trang-navy_1745457506.webp', 750000.00, 750000.00, 'VICTOR-PK011', 'Victor', 'Phụ kiện cầu lông', '12 tháng', 100, 'Sản phẩm Túi cầu lông Victor BR2603B chất lượng cao.', 'Thông số kỹ thuật chi tiết sẽ được cập nhật sớm.', 'Không có ưu đãi'),
+('Túi đựng giày Yonex BAG224B1032Z', 'https://cdn.shopvnb.com/img/300x300/uploads/san_pham/tui-dung-giay-yonex-bag224b1032z_1745456879.webp', 129000.00, 129000.00, 'YONEX-PK008', 'Yonex', 'Phụ kiện cầu lông', '12 tháng', 100, 'Sản phẩm Túi đựng giày Yonex BAG224B1032Z chất lượng cao.', 'Thông số kỹ thuật chi tiết sẽ được cập nhật sớm.', 'Không có ưu đãi'),
+('Túi Yonex CrossBody BAG224B0139Z', 'https://cdn.shopvnb.com/img/300x300/uploads/san_pham/tui-yonex-crossbody-bag224b0139z_1745454490.webp', 309000.00, 309000.00, 'YONEX-PK009', 'Yonex', 'Phụ kiện cầu lông', '12 tháng', 100, 'Sản phẩm Túi Yonex CrossBody BAG224B0139Z chất lượng cao.', 'Thông số kỹ thuật chi tiết sẽ được cập nhật sớm.', 'Không có ưu đãi'),
+('Túi Yonex CrossBody BAG224B0339Z', 'https://cdn.shopvnb.com/img/300x300/uploads/san_pham/tui-yonex-crossbody-bag224b0339z_1745453778.webp', 309000.00, 309000.00, 'YONEX-PK010', 'Yonex', 'Phụ kiện cầu lông', '12 tháng', 100, 'Sản phẩm Túi Yonex CrossBody BAG224B0339Z chất lượng cao.', 'Thông số kỹ thuật chi tiết sẽ được cập nhật sớm.', 'Không có ưu đãi'),
+('Túi Yonex CrossBody BAG224B0439Z', 'https://cdn.shopvnb.com/img/300x300/uploads/san_pham/tui-yonex-crossbody-bag224b0439z_1745453318.webp', 309000.00, 309000.00, 'YONEX-PK011', 'Yonex', 'Phụ kiện cầu lông', '12 tháng', 100, 'Sản phẩm Túi Yonex CrossBody BAG224B0439Z chất lượng cao.', 'Thông số kỹ thuật chi tiết sẽ được cập nhật sớm.', 'Không có ưu đãi'),
+('Túi Yonex CrossBody BAG224B0239Z', 'https://cdn.shopvnb.com/img/300x300/uploads/san_pham/tui-yonex-crossbody-bag224b0239z_1745452470.webp', 309000.00, 309000.00, 'YONEX-PK012', 'Yonex', 'Phụ kiện cầu lông', '12 tháng', 100, 'Sản phẩm Túi Yonex CrossBody BAG224B0239Z chất lượng cao.', 'Thông số kỹ thuật chi tiết sẽ được cập nhật sớm.', 'Không có ưu đãi'),
+('Túi cầu lông Yonex BAG02531WZ', 'https://cdn.shopvnb.com/img/300x300/uploads/san_pham/tui-cau-long-yonex-bag02531wz_1746557899.webp', 3259000.00, 3259000.00, 'YONEX-PK013', 'Yonex', 'Phụ kiện cầu lông', '12 tháng', 100, 'Sản phẩm Túi cầu lông Yonex BAG02531WZ chất lượng cao.', 'Thông số kỹ thuật chi tiết sẽ được cập nhật sớm.', 'Không có ưu đãi'),
+('Túi cầu lông Yonex BAG23426EXC3', 'https://cdn.shopvnb.com/img/300x300/uploads/san_pham/tui-cau-long-yonex-bag23426exc3_1745439705.webp', 1329000.00, 1329000.00, 'YONEX-PK014', 'Yonex', 'Phụ kiện cầu lông', '12 tháng', 100, 'Sản phẩm Túi cầu lông Yonex BAG23426EXC3 chất lượng cao.', 'Thông số kỹ thuật chi tiết sẽ được cập nhật sớm.', 'Không có ưu đãi'),
+('Váy Cầu Lông Taro TR024-V05 Nữ - Xanh Biển Chính Hãng', 'https://cdn.shopvnb.com/img/300x300/uploads/gallery/vay-cau-long-taro-tr024-v05-nu-xanh-bien-chinh-hang_1736276671.webp', 149000.00, 149000.00, 'TARO-VA001', 'Taro', 'Váy cầu lông', '12 tháng', 100, 'Sản phẩm Váy Cầu Lông Taro TR024-V05 Nữ - Xanh Biển Chính Hãng chất lượng cao.', 'Thông số kỹ thuật chi tiết sẽ được cập nhật sớm.', 'Không có ưu đãi'),
+('Váy Cầu Lông Taro TR024-V05 Nữ - Trắng Chính Hãng', 'https://cdn.shopvnb.com/img/300x300/uploads/gallery/vay-cau-long-taro-tr024-v05-nu-trang-chinh-hang_1736277365.webp', 149000.00, 149000.00, 'TARO-VA002', 'Taro', 'Váy cầu lông', '12 tháng', 100, 'Sản phẩm Váy Cầu Lông Taro TR024-V05 Nữ - Trắng Chính Hãng chất lượng cao.', 'Thông số kỹ thuật chi tiết sẽ được cập nhật sớm.', 'Không có ưu đãi'),
+('Váy Cầu Lông Taro TR024-V05 Nữ - Đen Chính Hãng', 'https://cdn.shopvnb.com/img/300x300/uploads/gallery/vay-cau-long-taro-tr024-v05-nu-den-chinh-hang_1736276803.webp', 149000.00, 149000.00, 'TARO-VA003', 'Taro', 'Váy cầu lông', '12 tháng', 100, 'Sản phẩm Váy Cầu Lông Taro TR024-V05 Nữ - Đen Chính Hãng chất lượng cao.', 'Thông số kỹ thuật chi tiết sẽ được cập nhật sớm.', 'Không có ưu đãi'),
+('Váy Cầu Lông Taro TR024-V04 Nữ - Xanh Biển Chính Hãng', 'https://cdn.shopvnb.com/img/300x300/uploads/gallery/vay-cau-long-taro-tr024-v04-nu-xanh-bien-chinh-hang_1736276164.webp', 149000.00, 149000.00, 'TARO-VA004', 'Taro', 'Váy cầu lông', '12 tháng', 100, 'Sản phẩm Váy Cầu Lông Taro TR024-V04 Nữ - Xanh Biển Chính Hãng chất lượng cao.', 'Thông số kỹ thuật chi tiết sẽ được cập nhật sớm.', 'Không có ưu đãi'),
+('Váy cầu lông Victec DRv245 - Lông công', 'https://cdn.shopvnb.com/img/300x300/uploads/gallery/vay-cau-long-victec-drv245-long-cong_1736285383.webp', 140000.00, 140000.00, 'VICTEC-VA001', 'Victec', 'Váy cầu lông', '12 tháng', 100, 'Sản phẩm Váy cầu lông Victec DRv245 - Lông công chất lượng cao.', 'Thông số kỹ thuật chi tiết sẽ được cập nhật sớm.', 'Không có ưu đãi'),
+('Váy Cầu Lông Taro TR024-V05 Nữ - Nâu Cà Phê Chính Hãng', 'https://cdn.shopvnb.com/img/300x300/uploads/gallery/vay-cau-long-taro-tr024-v05-nu-nau-ca-phe-chinh-hang_1736276409.webp', 149000.00, 149000.00, 'TARO-VA005', 'Taro', 'Váy cầu lông', '12 tháng', 100, 'Sản phẩm Váy Cầu Lông Taro TR024-V05 Nữ - Nâu Cà Phê Chính Hãng chất lượng cao.', 'Thông số kỹ thuật chi tiết sẽ được cập nhật sớm.', 'Không có ưu đãi'),
+('Váy Cầu Lông Taro TR024-V05 Nữ - Xanh Đen Chính Hãng', 'https://cdn.shopvnb.com/img/300x300/uploads/gallery/vay-cau-long-taro-tr024-v05-nu-xanh-den-chinh-hang_1736276543.webp', 149000.00, 149000.00, 'TARO-VA006', 'Taro', 'Váy cầu lông', '12 tháng', 100, 'Sản phẩm Váy Cầu Lông Taro TR024-V05 Nữ - Xanh Đen Chính Hãng chất lượng cao.', 'Thông số kỹ thuật chi tiết sẽ được cập nhật sớm.', 'Không có ưu đãi'),
+('Váy Cầu Lông Taro TR024-V05 Nữ - Đỏ Chính Hãng', 'https://cdn.shopvnb.com/img/300x300/uploads/gallery/vay-cau-long-taro-tr024-v05-nu-do-chinh-hang_1736276313.webp', 149000.00, 149000.00, 'TARO-VA007', 'Taro', 'Váy cầu lông', '12 tháng', 100, 'Sản phẩm Váy Cầu Lông Taro TR024-V05 Nữ - Đỏ Chính Hãng chất lượng cao.', 'Thông số kỹ thuật chi tiết sẽ được cập nhật sớm.', 'Không có ưu đãi'),
+('Váy Cầu Lông Taro TR024-V04 Nữ - Nâu Cà Phê Chính Hãng', 'https://cdn.shopvnb.com/img/300x300/uploads/gallery/vay-cau-long-taro-tr024-v04-nu-nau-ca-phe-chinh-hang_1736363335.webp', 149000.00, 149000.00, 'TARO-VA008', 'Taro', 'Váy cầu lông', '12 tháng', 100, 'Sản phẩm Váy Cầu Lông Taro TR024-V04 Nữ - Nâu Cà Phê Chính Hãng chất lượng cao.', 'Thông số kỹ thuật chi tiết sẽ được cập nhật sớm.', 'Không có ưu đãi'),
+('Váy Cầu Lông Taro TR024-V04 Nữ - Xanh Đen Chính Hãng', 'https://cdn.shopvnb.com/img/300x300/uploads/gallery/vay-cau-long-taro-tr024-v04-nu-xanh-den-chinh-hang_1736275814.webp', 149000.00, 149000.00, 'TARO-VA009', 'Taro', 'Váy cầu lông', '12 tháng', 100, 'Sản phẩm Váy Cầu Lông Taro TR024-V04 Nữ - Xanh Đen Chính Hãng chất lượng cao.', 'Thông số kỹ thuật chi tiết sẽ được cập nhật sớm.', 'Không có ưu đãi'),
+('Váy Cầu Lông Taro TR024-V04 Nữ - Đỏ Chính Hãng', 'https://cdn.shopvnb.com/img/300x300/uploads/gallery/vay-cau-long-taro-tr024-v04-nu-do-chinh-hang_1736363206.webp', 149000.00, 149000.00, 'TARO-VA010', 'Taro', 'Váy cầu lông', '12 tháng', 100, 'Sản phẩm Váy Cầu Lông Taro TR024-V04 Nữ - Đỏ Chính Hãng chất lượng cao.', 'Thông số kỹ thuật chi tiết sẽ được cập nhật sớm.', 'Không có ưu đãi'),
+('Váy Cầu Lông Taro TR024-V04 Nữ - Trắng Chính Hãng', 'https://cdn.shopvnb.com/img/300x300/uploads/gallery/vay-cau-long-taro-tr024-v04-nu-trang-chinh-hang_1736276042.webp', 149000.00, 149000.00, 'TARO-VA011', 'Taro', 'Váy cầu lông', '12 tháng', 100, 'Sản phẩm Váy Cầu Lông Taro TR024-V04 Nữ - Trắng Chính Hãng chất lượng cao.', 'Thông số kỹ thuật chi tiết sẽ được cập nhật sớm.', 'Không có ưu đãi'),
+('Váy Cầu Lông Taro TR024-V04 Nữ - Đen Chính Hãng', 'https://cdn.shopvnb.com/img/300x300/uploads/gallery/vay-cau-long-taro-tr024-v04-nu-den-chinh-hang_1736275931.webp', 149000.00, 149000.00, 'TARO-VA012', 'Taro', 'Váy cầu lông', '12 tháng', 100, 'Sản phẩm Váy Cầu Lông Taro TR024-V04 Nữ - Đen Chính Hãng chất lượng cao.', 'Thông số kỹ thuật chi tiết sẽ được cập nhật sớm.', 'Không có ưu đãi'),
+('Váy cầu lông Kamito Galaxy 1 KMVS240250 - Trắng chính hãng', 'https://cdn.shopvnb.com/img/300x300/uploads/gallery/vay-cau-long-kamito-galaxy-1-kmvs240250-trang-chinh-hang_1731464000.webp', 350000.00, 350000.00, 'KAMITO-VA001', 'Kamito', 'Váy cầu lông', '12 tháng', 100, 'Sản phẩm Váy cầu lông Kamito Galaxy 1 KMVS240250 - Trắng chính hãng chất lượng cao.', 'Thông số kỹ thuật chi tiết sẽ được cập nhật sớm.', 'Không có ưu đãi'),
+('Váy cầu lông Kamito Galaxy 1 KMVS240223 - Navy chính hãng', 'https://cdn.shopvnb.com/img/300x300/uploads/gallery/vay-cau-long-kamito-galaxy-1-kmvs240223-navy-chinh-hang_1731463925.webp', 350000.00, 350000.00, 'KAMITO-VA002', 'Kamito', 'Váy cầu lông', '12 tháng', 100, 'Sản phẩm Váy cầu lông Kamito Galaxy 1 KMVS240223 - Navy chính hãng chất lượng cao.', 'Thông số kỹ thuật chi tiết sẽ được cập nhật sớm.', 'Không có ưu đãi'),
+('Váy Cầu Lông Taro TR024-V02- Đen Chính Hãng', 'https://cdn.shopvnb.com/img/300x300/uploads/gallery/vay-cau-long-taro-tr024-v02-den-chinh-hang_1727923979.webp', 139000.00, 139000.00, 'TARO-VA013', 'Taro', 'Váy cầu lông', '12 tháng', 100, 'Sản phẩm Váy Cầu Lông Taro TR024-V02- Đen Chính Hãng chất lượng cao.', 'Thông số kỹ thuật chi tiết sẽ được cập nhật sớm.', 'Không có ưu đãi'),
+('Váy Cầu Lông Taro TR024-V02- Trắng Chính Hãng', 'https://cdn.shopvnb.com/img/300x300/uploads/gallery/vay-cau-long-taro-tr024-v02-trang-chinh-hang_1727923254.webp', 139000.00, 139000.00, 'TARO-VA014', 'Taro', 'Váy cầu lông', '12 tháng', 100, 'Sản phẩm Váy Cầu Lông Taro TR024-V02- Trắng Chính Hãng chất lượng cao.', 'Thông số kỹ thuật chi tiết sẽ được cập nhật sớm.', 'Không có ưu đãi'),
+('Váy Cầu Lông Taro TR024-V02- Đỏ Chính Hãng', 'https://cdn.shopvnb.com/img/300x300/uploads/gallery/vay-cau-long-taro-tr024-v02-do-chinh-hang_1727923128.webp', 139000.00, 139000.00, 'TARO-VA015', 'Taro', 'Váy cầu lông', '12 tháng', 100, 'Sản phẩm Váy Cầu Lông Taro TR024-V02- Đỏ Chính Hãng chất lượng cao.', 'Thông số kỹ thuật chi tiết sẽ được cập nhật sớm.', 'Không có ưu đãi'),
+('Váy Cầu Lông Taro TR024-V02- Đỏ Đô Chính Hãng', 'https://cdn.shopvnb.com/img/300x300/uploads/gallery/vay-cau-long-taro-tr024-v02-do-do-chinh-hang_1727923004.webp', 139000.00, 139000.00, 'TARO-VA016', 'Taro', 'Váy cầu lông', '12 tháng', 100, 'Sản phẩm Váy Cầu Lông Taro TR024-V02- Đỏ Đô Chính Hãng chất lượng cao.', 'Thông số kỹ thuật chi tiết sẽ được cập nhật sớm.', 'Không có ưu đãi'),
+('Váy Cầu Lông Taro TR024-V02- Hồng Chính Hãng', 'https://cdn.shopvnb.com/img/300x300/uploads/gallery/vay-cau-long-taro-tr024-v02-hong-chinh-hang_1727922801.webp', 139000.00, 139000.00, 'TARO-VA017', 'Taro', 'Váy cầu lông', '12 tháng', 100, 'Sản phẩm Váy Cầu Lông Taro TR024-V02- Hồng Chính Hãng chất lượng cao.', 'Thông số kỹ thuật chi tiết sẽ được cập nhật sớm.', 'Không có ưu đãi'),
+('Vợt cầu lông VNB V88 xanh chính hãng', 'https://cdn.shopvnb.com/img/300x300/uploads/san_pham/vot-cau-long-vnb-v88-xanh-chinh-hang-1.webp', 638000.00, 638000.00, 'VNB-VOT001', 'VNB', 'Vợt cầu lông', '12 tháng', 100, 'Sản phẩm Vợt cầu lông VNB V88 xanh chính hãng chất lượng cao.', 'Thông số kỹ thuật chi tiết sẽ được cập nhật sớm.', 'Không có ưu đãi'),
+('Vợt cầu lông VNB V200i Hồng', 'https://cdn.shopvnb.com/img/300x300/uploads/san_pham/vot-cau-long-vnb-v200i-hong-3.webp', 529000.00, 529000.00, 'VNB-VOT002', 'VNB', 'Vợt cầu lông', '12 tháng', 100, 'Sản phẩm Vợt cầu lông VNB V200i Hồng chất lượng cao.', 'Thông số kỹ thuật chi tiết sẽ được cập nhật sớm.', 'Không có ưu đãi'),
+('Vợt cầu lông VNB V88 cam chính hãng', 'https://cdn.shopvnb.com/img/300x300/uploads/san_pham/vot-cau-long-vnb-v88-3.webp', 638000.00, 638000.00, 'VNB-VOT003', 'VNB', 'Vợt cầu lông', '12 tháng', 100, 'Sản phẩm Vợt cầu lông VNB V88 cam chính hãng chất lượng cao.', 'Thông số kỹ thuật chi tiết sẽ được cập nhật sớm.', 'Không có ưu đãi'),
+('Vợt cầu lông VNB V200 Đỏ chính hãng', 'https://cdn.shopvnb.com/img/300x300/uploads/san_pham/vot-cau-long-vnb-v200-do-2.webp', 529000.00, 529000.00, 'VNB-VOT004', 'VNB', 'Vợt cầu lông', '12 tháng', 100, 'Sản phẩm Vợt cầu lông VNB V200 Đỏ chính hãng chất lượng cao.', 'Thông số kỹ thuật chi tiết sẽ được cập nhật sớm.', 'Không có ưu đãi'),
+('Vợt cầu lông VNB TC88B', 'https://cdn.shopvnb.com/img/300x300/uploads/san_pham/vot-cau-long-vnb-tc88b-1.webp', 799000.00, 799000.00, 'VNB-VOT005', 'VNB', 'Vợt cầu lông', '12 tháng', 100, 'Sản phẩm Vợt cầu lông VNB TC88B chất lượng cao.', 'Thông số kỹ thuật chi tiết sẽ được cập nhật sớm.', 'Không có ưu đãi'),
+('Vợt cầu lông VNB TC88C', 'https://cdn.shopvnb.com/img/300x300/uploads/san_pham/vot-cau-long-vnb-tc88c-1.webp', 799000.00, 799000.00, 'VNB-VOT006', 'VNB', 'Vợt cầu lông', '12 tháng', 100, 'Sản phẩm Vợt cầu lông VNB TC88C chất lượng cao.', 'Thông số kỹ thuật chi tiết sẽ được cập nhật sớm.', 'Không có ưu đãi'),
+('Vợt cầu lông VNB Carbon Training 150g chính hãng', 'https://cdn.shopvnb.com/img/300x300/uploads/san_pham/vot-cau-long-vnb-carbon-training-150g-5.webp', 698000.00, 698000.00, 'VNB-VOT007', 'VNB', 'Vợt cầu lông', '12 tháng', 100, 'Sản phẩm Vợt cầu lông VNB Carbon Training 150g chính hãng chất lượng cao.', 'Thông số kỹ thuật chi tiết sẽ được cập nhật sớm.', 'Không có ưu đãi'),
+('Vợt cầu lông VNB V200 Xanh chính hãng', 'https://cdn.shopvnb.com/img/300x300/uploads/san_pham/vot-cau-long-vnb-v200-xanh-2.webp', 529000.00, 529000.00, 'VNB-VOT008', 'VNB', 'Vợt cầu lông', '12 tháng', 100, 'Sản phẩm Vợt cầu lông VNB V200 Xanh chính hãng chất lượng cao.', 'Thông số kỹ thuật chi tiết sẽ được cập nhật sớm.', 'Không có ưu đãi'),
+('Combo Mua Vợt Cầu Lông Victor ARS 100X Ultra G Tặng Vợt Victor ARS 9990K + Vợt Victor TK Ryuga CLS', 'https://cdn.shopvnb.com/img/300x300/uploads/gallery/combo-mua-vot-cau-long-victor-ars-100x-ultra-g-tang-vot-victor-ars-9990k-vot-victor-tk-ryuga-cls_1749170091.webp', 5830000.00, 5830000.00, 'VICTOR-VOT001', 'Victor', 'Vợt cầu lông', '12 tháng', 100, 'Sản phẩm Combo Mua Vợt Cầu Lông Victor ARS 100X Ultra G Tặng Vợt Victor ARS 9990K + Vợt Victor TK Ryuga CLS chất lượng cao.', 'Thông số kỹ thuật chi tiết sẽ được cập nhật sớm.', 'Combo Mua Vợt Cầu Lông Victor ARS 100X Ultra G Tặng Vợt Victor ARS 9990K + Vợt Victor TK Ryuga CLS'),
+('Combo Mua Vợt Cầu Lông Victor Auraspeed Fantôme SC25 CPS Tặng Vợt Victor TK HMR Pro + Vợt Victor TK Ryuga CLS', 'https://cdn.shopvnb.com/img/300x300/uploads/gallery/combo-mua-vot-cau-long-victor-auraspeed-fantome-sc25-cps-tang-vot-victor-tk-hmr-pro-vot-victor-tk-ryuga-cls_1749169966.webp', 6180000.00, 6180000.00, 'VICTOR-VOT002', 'Victor', 'Vợt cầu lông', '12 tháng', 100, 'Sản phẩm Combo Mua Vợt Cầu Lông Victor Auraspeed Fantôme SC25 CPS Tặng Vợt Victor TK HMR Pro + Vợt Victor TK Ryuga CLS chất lượng cao.', 'Thông số kỹ thuật chi tiết sẽ được cập nhật sớm.', 'Combo Mua Vợt Cầu Lông Victor Auraspeed Fantôme SC25 CPS Tặng Vợt Victor TK HMR Pro + Vợt Victor TK Ryuga CLS'),
+('Combo mua vợt cầu lông Victor ARS 90K II tặng vợt Victor TK220H II + vợt Victor ARS 9990K + Vợt Kawasaki P26', 'https://cdn.shopvnb.com/img/300x300/uploads/gallery/combo-mua-vot-cau-long-victor-ars-90k-ii-tang-vot-victor-tk220h-ii-vot-victor-ars-9990k-vot-kawasaki-p26_1748997022.webp', 5030000.00, 5030000.00, 'VICTOR-VOT003', 'Victor', 'Vợt cầu lông', '12 tháng', 100, 'Sản phẩm Combo mua vợt cầu lông Victor ARS 90K II tặng vợt Victor TK220H II + vợt Victor ARS 9990K + Vợt Kawasaki P26 chất lượng cao.', 'Thông số kỹ thuật chi tiết sẽ được cập nhật sớm.', 'Combo mua vợt cầu lông Victor ARS 90K II tặng vợt Victor TK220H II + vợt Victor ARS 9990K + Vợt Kawasaki P26'),
+('Vợt cầu lông Victor Thruster HMR Pro', 'https://cdn.shopvnb.com/img/300x300/uploads/san_pham/vot-cau-long-victor-thruster-hmr-pro_1748575023.webp', 1390000.00, 1390000.00, 'VICTOR-VOT004', 'Victor', 'Vợt cầu lông', '12 tháng', 100, 'Sản phẩm Vợt cầu lông Victor Thruster HMR Pro chất lượng cao.', 'Thông số kỹ thuật chi tiết sẽ được cập nhật sớm.', 'Không có ưu đãi'),
+('Combo Mua Vợt Cầu Lông Victor TK-F Ultra Tặng Vợt Victor ARS 9000 + Vợt Victor TK Ryuga CLS', 'https://cdn.shopvnb.com/img/300x300/uploads/gallery/combo-mua-vot-cau-long-victor-tk-f-ultra-tang-vot-victor-ars-9000-vot-victor-tk-ryuga-cls_1748829165.webp', 5830000.00, 5830000.00, 'VICTOR-VOT005', 'Victor', 'Vợt cầu lông', '12 tháng', 100, 'Sản phẩm Combo Mua Vợt Cầu Lông Victor TK-F Ultra Tặng Vợt Victor ARS 9000 + Vợt Victor TK Ryuga CLS chất lượng cao.', 'Thông số kỹ thuật chi tiết sẽ được cập nhật sớm.', 'Combo Mua Vợt Cầu Lông Victor TK-F Ultra Tặng Vợt Victor ARS 9000 + Vợt Victor TK Ryuga CLS'),
+('Combo Mua Vợt Cầu Lông Victor Ryuga II Pro Tặng Vợt Victor ARS 9000 +  Vợt Victor TK Ryuga CLS', 'https://cdn.shopvnb.com/img/300x300/uploads/gallery/combo-mua-vot-cau-long-victor-ryuga-ii-pro-tang-vot-victor-ars-9000-vot-victor-tk-ryuga-cls_1748829095.webp', 5830000.00, 5830000.00, 'VICTOR-VOT006', 'Victor', 'Vợt cầu lông', '12 tháng', 100, 'Sản phẩm Combo Mua Vợt Cầu Lông Victor Ryuga II Pro Tặng Vợt Victor ARS 9000 +  Vợt Victor TK Ryuga CLS chất lượng cao.', 'Thông số kỹ thuật chi tiết sẽ được cập nhật sớm.', 'Combo Mua Vợt Cầu Lông Victor Ryuga II Pro Tặng Vợt Victor ARS 9000 +  Vợt Victor TK Ryuga CLS'),
+('Combo Mua Vợt Cầu Lông Victor ARS HS Plus Tặng Vợt Victor ARS 9000 + Vợt Victor TK Ryuga CLS', 'https://cdn.shopvnb.com/img/300x300/uploads/gallery/combo-mua-vot-cau-long-victor-ars-hs-plus-tang-vot-victor-ars-9000-vot-victor-tk-ryuga-cls_1748828648.webp', 4980000.00, 4980000.00, 'VICTOR-VOT007', 'Victor', 'Vợt cầu lông', '12 tháng', 100, 'Sản phẩm Combo Mua Vợt Cầu Lông Victor ARS HS Plus Tặng Vợt Victor ARS 9000 + Vợt Victor TK Ryuga CLS chất lượng cao.', 'Thông số kỹ thuật chi tiết sẽ được cập nhật sớm.', 'Combo Mua Vợt Cầu Lông Victor ARS HS Plus Tặng Vợt Victor ARS 9000 + Vợt Victor TK Ryuga CLS'),
+('Vợt Cầu Lông Victor Ryuga TD/C chính hãng', 'https://cdn.shopvnb.com/img/300x300/uploads/gallery/vot-cau-long-victor-ryuga-td-c-chinh-hang_1748488966.webp', 2450000.00, 2450000.00, 'VICTOR-VOT008', 'Victor', 'Vợt cầu lông', '12 tháng', 100, 'Sản phẩm Vợt Cầu Lông Victor Ryuga TD/C chính hãng chất lượng cao.', 'Thông số kỹ thuật chi tiết sẽ được cập nhật sớm.', 'Không có ưu đãi'),
+('Combo Mua Vợt Cầu Lông Victor Ryuga TD/C Tặng Vợt Victor ARS 9990K + Vợt Victor TK Ryuga CLS', 'https://cdn.shopvnb.com/img/300x300/uploads/gallery/combo-mua-vot-cau-long-victor-ryuga-td-c-tang-vot-victor-ars-9990k-vot-victor-tk-ryuga-cls_1748489079.webp', 5030000.00, 5030000.00, 'VICTOR-VOT009', 'Victor', 'Vợt cầu lông', '12 tháng', 100, 'Sản phẩm Combo Mua Vợt Cầu Lông Victor Ryuga TD/C Tặng Vợt Victor ARS 9990K + Vợt Victor TK Ryuga CLS chất lượng cao.', 'Thông số kỹ thuật chi tiết sẽ được cập nhật sớm.', 'Combo Mua Vợt Cầu Lông Victor Ryuga TD/C Tặng Vợt Victor ARS 9990K + Vợt Victor TK Ryuga CLS'),
+('Set vợt cầu lông Victor Thruster Goku GB F – DragonBall Z 2025 chính hãng', 'https://cdn.shopvnb.com/img/300x300/uploads/gallery/set-vot-cau-long-victor-thruster-goku-gb-f-ndash-dragonball-z-2025-chinh-hang_1748488562.webp', 4800000.00, 4800000.00, 'VICTOR-VOT010', 'Victor', 'Vợt cầu lông', '12 tháng', 100, 'Sản phẩm Set vợt cầu lông Victor Thruster Goku GB F – DragonBall Z 2025 chính hãng chất lượng cao.', 'Thông số kỹ thuật chi tiết sẽ được cập nhật sớm.', 'Không có ưu đãi'),
+('Combo Mua Set Vợt Cầu Lông Victor TK Goku Tặng Vợt Victor ARS 9000 + Vợt Victor TK Ryuga CLS', 'https://cdn.shopvnb.com/img/300x300/uploads/gallery/combo-mua-set-vot-cau-long-victor-tk-goku-tang-vot-victor-ars-9000-vot-victor-tk-ryuga-cls_1748488734.webp', 7180000.00, 7180000.00, 'VICTOR-VOT011', 'Victor', 'Vợt cầu lông', '12 tháng', 100, 'Sản phẩm Combo Mua Set Vợt Cầu Lông Victor TK Goku Tặng Vợt Victor ARS 9000 + Vợt Victor TK Ryuga CLS chất lượng cao.', 'Thông số kỹ thuật chi tiết sẽ được cập nhật sớm.', 'Combo Mua Set Vợt Cầu Lông Victor TK Goku Tặng Vợt Victor ARS 9000 + Vợt Victor TK Ryuga CLS'),
+('Combo Mua Vợt Cầu Lông Victor ARS 90K II TD Tặng Vợt Victor ARS 9990K + Vợt Victor TK Ryuga CLS', 'https://cdn.shopvnb.com/img/300x300/uploads/gallery/combo-mua-vot-cau-long-victor-ars-90k-ii-td-tang-vot-victor-ars-9990k-vot-victor-tk-ryuga-cls_1748488232.webp', 5030000.00, 5030000.00, 'VICTOR-VOT012', 'Victor', 'Vợt cầu lông', '12 tháng', 100, 'Sản phẩm Combo Mua Vợt Cầu Lông Victor ARS 90K II TD Tặng Vợt Victor ARS 9990K + Vợt Victor TK Ryuga CLS chất lượng cao.', 'Thông số kỹ thuật chi tiết sẽ được cập nhật sớm.', 'Combo Mua Vợt Cầu Lông Victor ARS 90K II TD Tặng Vợt Victor ARS 9990K + Vợt Victor TK Ryuga CLS');
+INSERT INTO products (name, image, price, old_price, sku, brand, category, warranty, stock, description, specs, promotion) VALUES
+('Quần cầu lông Kamito Galaxy 2 KMPS242540F nữ - Đen chính hãng', 'https://cdn.shopvnb.com/img/300x300/uploads/gallery/quan-cau-long-kamito-galaxy-2-kmps24540f-nu-den-chinh-hang_1744654864.webp', 189000.00, 189000.00, 'KAMITO-Q001', 'Kamito', 'Quần cầu lông', '12 tháng', 100, 'Sản phẩm Quần cầu lông Kamito Galaxy 2 KMPS242540F nữ - Đen chính hãng chất lượng cao.', 'Thông số kỹ thuật chi tiết sẽ được cập nhật sớm.', 'Không có ưu đãi'),
+('Quần cầu lông Yonex TSM2911 - Spear Mint chính hãng', 'https://cdn.shopvnb.com/img/300x300/uploads/gallery/quan-cau-long-yonex-tsm2911-spear-mint-chinh-hang_1742496331.webp', 149000.00, 149000.00, 'YONEX-Q001', 'Yonex', 'Quần cầu lông', '12 tháng', 100, 'Sản phẩm Quần cầu lông Yonex TSM2911 - Spear Mint chính hãng chất lượng cao.', 'Thông số kỹ thuật chi tiết sẽ được cập nhật sớm.', 'Không có ưu đãi'),
+('Quần cầu lông Yonex TSM2911 - Blue Berry chính hãng', 'https://cdn.shopvnb.com/img/300x300/uploads/gallery/quan-cau-long-yonex-tsm2911-blue-berry-chinh-hang_1742496276.webp', 149000.00, 149000.00, 'YONEX-Q002', 'Yonex', 'Quần cầu lông', '12 tháng', 100, 'Sản phẩm Quần cầu lông Yonex TSM2911 - Blue Berry chính hãng chất lượng cao.', 'Thông số kỹ thuật chi tiết sẽ được cập nhật sớm.', 'Không có ưu đãi'),
+('Quần cầu lông Yonex SM2765 - Beet Red chính hãng', 'https://cdn.shopvnb.com/img/300x300/uploads/gallery/quan-cau-long-yonex-sm2765-beet-red-chinh-hang_1745876747.webp', 279000.00, 279000.00, 'YONEX-Q003', 'Yonex', 'Quần cầu lông', '12 tháng', 100, 'Sản phẩm Quần cầu lông Yonex SM2765 - Beet Red chính hãng chất lượng cao.', 'Thông số kỹ thuật chi tiết sẽ được cập nhật sớm.', 'Không có ưu đãi'),
+('Quần cầu lông Yonex SM2908 - Night Sky chính hãng', 'https://cdn.shopvnb.com/img/300x300/uploads/gallery/quan-cau-long-yonex-sm2908-night-sky-chinh-hang_1747353697.webp', 149000.00, 149000.00, 'YONEX-Q004', 'Yonex', 'Quần cầu lông', '12 tháng', 100, 'Sản phẩm Quần cầu lông Yonex SM2908 - Night Sky chính hãng chất lượng cao.', 'Thông số kỹ thuật chi tiết sẽ được cập nhật sớm.', 'Không có ưu đãi'),
+('Quần Cầu Lông Taro TR024-Q01 Nữ - Đỏ Chính Hãng', 'https://cdn.shopvnb.com/img/300x300/uploads/gallery/quan-cau-long-taro-tr024-q01-nam-do-chinh-hang_1745803088.webp', 139000.00, 139000.00, 'TARO-Q001', 'Taro', 'Quần cầu lông', '12 tháng', 100, 'Sản phẩm Quần Cầu Lông Taro TR024-Q01 Nữ - Đỏ Chính Hãng chất lượng cao.', 'Thông số kỹ thuật chi tiết sẽ được cập nhật sớm.', 'Không có ưu đãi'),
+('Quần Cầu Lông Taro TR024-Q01 Nam - Đỏ Chính Hãng', 'https://cdn.shopvnb.com/img/300x300/uploads/gallery/quan-cau-long-taro-tr024-q01-nam-do-chinh-hang_1745803083.webp', 139000.00, 139000.00, 'TARO-Q002', 'Taro', 'Quần cầu lông', '12 tháng', 100, 'Sản phẩm Quần Cầu Lông Taro TR024-Q01 Nam - Đỏ Chính Hãng chất lượng cao.', 'Thông số kỹ thuật chi tiết sẽ được cập nhật sớm.', 'Không có ưu đãi'),
+('Quần cầu lông Kamito Galaxy 2 KMPS242540 nam - Đen chính hãng', 'https://cdn.shopvnb.com/img/300x300/uploads/gallery/quan-cau-long-kamito-galaxy-2-kmps24540-nam-den-chinh-hang_1744654456.webp', 189000.00, 189000.00, 'KAMITO-Q002', 'Kamito', 'Quần cầu lông', '12 tháng', 100, 'Sản phẩm Quần cầu lông Kamito Galaxy 2 KMPS242540 nam - Đen chính hãng chất lượng cao.', 'Thông số kỹ thuật chi tiết sẽ được cập nhật sớm.', 'Không có ưu đãi'),
+('Quần cầu lông Yonex SM2765 - Navy Peony chính hãng', 'https://cdn.shopvnb.com/img/300x300/uploads/gallery/quan-cau-long-yonex-sm2765-navy-peony-chinh-hang_1745875463.webp', 279000.00, 279000.00, 'YONEX-Q005', 'Yonex', 'Quần cầu lông', '12 tháng', 100, 'Sản phẩm Quần cầu lông Yonex SM2765 - Navy Peony chính hãng chất lượng cao.', 'Thông số kỹ thuật chi tiết sẽ được cập nhật sớm.', 'Không có ưu đãi'),
+('Quần cầu lông Yonex SM2765 - Apple Cinnamon chính hãng', 'https://cdn.shopvnb.com/img/300x300/uploads/gallery/quan-cau-long-yonex-sm2765-apple-cinnamon-chinh-hang_1745875866.webp', 279000.00, 279000.00, 'YONEX-Q006', 'Yonex', 'Quần cầu lông', '12 tháng', 100, 'Sản phẩm Quần cầu lông Yonex SM2765 - Apple Cinnamon chính hãng chất lượng cao.', 'Thông số kỹ thuật chi tiết sẽ được cập nhật sớm.', 'Không có ưu đãi'),
+('Quần cầu lông Yonex SM2765 - Anthracite chính hãng', 'https://cdn.shopvnb.com/img/300x300/uploads/gallery/quan-cau-long-yonex-sm2765-anthracite-chinh-hang_1745875975.webp', 279000.00, 279000.00, 'YONEX-Q007', 'Yonex', 'Quần cầu lông', '12 tháng', 100, 'Sản phẩm Quần cầu lông Yonex SM2765 - Anthracite chính hãng chất lượng cao.', 'Thông số kỹ thuật chi tiết sẽ được cập nhật sớm.', 'Không có ưu đãi'),
+('Quần cầu lông Yonex SM2570 Nam - Dark Gull Gray chính hãng', 'https://cdn.shopvnb.com/img/300x300/uploads/gallery/quan-cau-long-yonex-sm2570-nam-dark-gull-gray-chinh-hang_1745877646.webp', 369000.00, 369000.00, 'YONEX-Q008', 'Yonex', 'Quần cầu lông', '12 tháng', 100, 'Sản phẩm Quần cầu lông Yonex SM2570 Nam - Dark Gull Gray chính hãng chất lượng cao.', 'Thông số kỹ thuật chi tiết sẽ được cập nhật sớm.', 'Không có ưu đãi'),
+('Quần cầu lông Yonex SM2570 Nam - Maritime Blue chính hãng', 'https://cdn.shopvnb.com/img/300x300/uploads/gallery/quan-cau-long-yonex-sm2570-nam-maritime-blue-chinh-hang_1745883578.webp', 369000.00, 369000.00, 'YONEX-Q009', 'Yonex', 'Quần cầu lông', '12 tháng', 100, 'Sản phẩm Quần cầu lông Yonex SM2570 Nam - Maritime Blue chính hãng chất lượng cao.', 'Thông số kỹ thuật chi tiết sẽ được cập nhật sớm.', 'Không có ưu đãi'),
+('Quần cầu lông Yonex SM2570 Nam - Rhubarb chính hãng', 'https://cdn.shopvnb.com/img/300x300/uploads/gallery/quan-cau-long-yonex-sm2570-nam-rhubarb-chinh-hang_1745877429.webp', 369000.00, 369000.00, 'YONEX-Q010', 'Yonex', 'Quần cầu lông', '12 tháng', 100, 'Sản phẩm Quần cầu lông Yonex SM2570 Nam - Rhubarb chính hãng chất lượng cao.', 'Thông số kỹ thuật chi tiết sẽ được cập nhật sớm.', 'Không có ưu đãi'),
+('Quần cầu lông Yonex SM2570 Nam - Jet Black chính hãng', 'https://cdn.shopvnb.com/img/300x300/uploads/gallery/quan-cau-long-yonex-sm2570-nam-jet-black-chinh-hang_1745877290.webp', 369000.00, 369000.00, 'YONEX-Q011', 'Yonex', 'Quần cầu lông', '12 tháng', 100, 'Sản phẩm Quần cầu lông Yonex SM2570 Nam - Jet Black chính hãng chất lượng cao.', 'Thông số kỹ thuật chi tiết sẽ được cập nhật sớm.', 'Không có ưu đãi'),
+('Quần Cầu Lông Taro TR025-Q06 Nam - Đen Chính Hãng', 'https://cdn.shopvnb.com/img/300x300/uploads/gallery/quan-cau-long-taro-tr025-q06-nam-den-chinh-hang_1741804291.webp', 159000.00, 159000.00, 'TARO-Q003', 'Taro', 'Quần cầu lông', '12 tháng', 100, 'Sản phẩm Quần Cầu Lông Taro TR025-Q06 Nam - Đen Chính Hãng chất lượng cao.', 'Thông số kỹ thuật chi tiết sẽ được cập nhật sớm.', 'Không có ưu đãi'),
+('Quần Cầu Lông Taro TR025-Q06 Nam - Xanh Đen Chính Hãng', 'https://cdn.shopvnb.com/img/300x300/uploads/gallery/quan-cau-long-taro-tr025-q06-nam-xanh-den-chinh-hang_1741804652.webp', 159000.00, 159000.00, 'TARO-Q004', 'Taro', 'Quần cầu lông', '12 tháng', 100, 'Sản phẩm Quần Cầu Lông Taro TR025-Q06 Nam - Xanh Đen Chính Hãng chất lượng cao.', 'Thông số kỹ thuật chi tiết sẽ được cập nhật sớm.', 'Không có ưu đãi'),
+('Quần Cầu Lông Taro TR025-Q06 Nữ - Xanh Đen Chính Hãng', 'https://cdn.shopvnb.com/img/300x300/uploads/gallery/quan-cau-long-taro-tr025-q06-nam-xanh-den-chinh-hang_1741804660.webp', 159000.00, 159000.00, 'TARO-Q005', 'Taro', 'Quần cầu lông', '12 tháng', 100, 'Sản phẩm Quần Cầu Lông Taro TR025-Q06 Nữ - Xanh Đen Chính Hãng chất lượng cao.', 'Thông số kỹ thuật chi tiết sẽ được cập nhật sớm.', 'Không có ưu đãi'),
+('Quần Cầu Lông Taro TR025-Q06 Nam - Trắng Chính Hãng', 'https://cdn.shopvnb.com/img/300x300/uploads/gallery/quan-cau-long-taro-tr025-q06-nam-trang-chinh-hang_1741803703.webp', 159000.00, 159000.00, 'TARO-Q006', 'Taro', 'Quần cầu lông', '12 tháng', 100, 'Sản phẩm Quần Cầu Lông Taro TR025-Q06 Nam - Trắng Chính Hãng chất lượng cao.', 'Thông số kỹ thuật chi tiết sẽ được cập nhật sớm.', 'Không có ưu đãi'),
+('Quần Cầu Lông Taro TR025-Q06 Nam - Đỏ Chính Hãng', 'https://cdn.shopvnb.com/img/300x300/uploads/gallery/quan-cau-long-taro-tr025-q06-nu-do-chinh-hang_1741804150.webp', 159000.00, 159000.00, 'TARO-Q007', 'Taro', 'Quần cầu lông', '12 tháng', 100, 'Sản phẩm Quần Cầu Lông Taro TR025-Q06 Nam - Đỏ Chính Hãng chất lượng cao.', 'Thông số kỹ thuật chi tiết sẽ được cập nhật sớm.', 'Không có ưu đãi');
+
+
+

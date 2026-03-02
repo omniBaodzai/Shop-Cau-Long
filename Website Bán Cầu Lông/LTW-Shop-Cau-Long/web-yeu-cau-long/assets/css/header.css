@@ -1,0 +1,105 @@
+
+        .search-box {
+            display: flex; /* Hiển thị các phần tử theo chiều ngang */
+            align-items: center; /* Căn giữa các phần tử theo chiều dọc */
+            justify-content: space-between; /* Căn đều khoảng cách giữa các phần tử */
+            margin: 0 auto;
+            max-width: 400px; /* Đặt chiều rộng tối đa cho thanh tìm kiếm */
+            background-color: #f9f9f9;
+            
+            border-radius: 25px;
+            padding: 5px 15px;
+            display: flex;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        .search-box form {
+            display: flex;
+            width: 100%; /* Đảm bảo form chiếm toàn bộ không gian của search-box */
+        }
+        .search-box input[type="text"] {
+            flex: 1; /* Đảm bảo ô nhập chiếm toàn bộ không gian còn lại */
+            border: none;
+            outline: none;
+            background: transparent;
+            font-size: 16px;
+            padding: 5px;
+            color: #333;
+        }
+
+        .search-box input[type="text"]::placeholder {
+            color: #aaa;
+        }
+
+        .search-box button {
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: #007bff;
+            font-size: 18px;
+            padding: 5px;
+            transition: color 0.3s ease;
+        }
+
+        .search-box button:hover {
+            color: #0056b3;
+        }
+        .nav-right-item .cart-count {
+            background-color:rgb(179, 207, 238); /* Màu nền cho số lượng sản phẩm */
+            color:rgb(196, 64, 24); /* Màu chữ */
+            font-size: 12px;
+            font-weight: bold;
+            border-radius: 50%; /* Bo tròn */
+            padding: 2px 6px; /* Khoảng cách bên trong */
+            margin-left: 5px; /* Khoảng cách giữa biểu tượng và số lượng */
+        }
+
+        .dropdown-menu.cart-dropdown {
+            position: absolute;
+            top: 100%; /* Hiển thị ngay bên dưới liên kết */
+            left: 0;
+            width: 250px; /* Chiều rộng của menu */
+            background-color: #fff; /* Màu nền */
+            border: 1px solid #ddd; /* Đường viền */
+            border-radius: 8px; /* Bo góc */
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Hiệu ứng đổ bóng */
+            padding: 10px; /* Khoảng cách bên trong */
+            z-index: 1000; /* Đảm bảo menu hiển thị trên các phần tử khác */
+            display: none; /* Ẩn menu mặc định */
+            top: calc(100% + 10px);
+        }
+
+        .nav-right-item.dropdown:hover .dropdown-menu.cart-dropdown {
+            display: block; /* Hiển thị menu khi hover */
+        }
+
+        .cart-dropdown .cart-icon {
+            font-size: 24px; /* Kích thước biểu tượng */
+            /* Màu biểu tượng */
+            margin-bottom: 10px; /* Khoảng cách dưới biểu tượng */
+            display: block;
+            text-align: center;
+        }
+
+        .cart-dropdown .cart-items {
+            list-style: none; /* Xóa dấu đầu dòng */
+            padding: 0;
+            margin: 0;
+        }
+
+        .cart-dropdown .cart-items li {
+            font-size: 14px;
+            color: #333; /* Màu chữ */
+            padding: 5px 0; /* Khoảng cách giữa các mục */
+            border-bottom: 1px solid #ddd; /* Đường viền dưới mỗi mục */
+        }
+
+        .cart-dropdown .cart-items li:last-child {
+            border-bottom: none; /* Xóa đường viền dưới mục cuối cùng */
+        }
+
+        .cart-dropdown .empty-cart-msg {
+            font-size: 14px;
+            color: #999; /* Màu chữ nhạt */
+            text-align: center; /* Căn giữa thông báo */
+            margin: 10px 0; /* Khoảng cách trên và dưới */
+        }

@@ -1,0 +1,159 @@
+
+        body {
+            font-family: "Segoe UI", Tahoma, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+        }
+        .checkout-container {
+            max-width: 800px;
+            margin: 40px auto;
+            background-color: #fff;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+        .section-title {
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: #1d3557;
+            margin-bottom: 16px;
+            position: relative;
+            display: inline-block;
+            text-align: center;
+            width: 100%;
+        }
+        .section-title::after {
+            content: "";
+            position: absolute;
+            left: 50%;
+            bottom: -8px;
+            transform: translateX(-50%);
+            width: 60px;
+            height: 4px;
+            background: linear-gradient(90deg, #e63946 0%, #ff7f2a 100%);
+            border-radius: 2px;
+        }
+        .section-title span {
+            color: #e63946;
+        }
+        h1 {
+            text-align: center;
+            color: rgb(31, 141, 45);
+            margin-bottom: 30px;
+            font-size: 2.5rem;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #555;
+        }
+        .form-group input[type="text"],
+        .form-group input[type="email"],
+        .form-group input[type="tel"],
+        .form-group textarea {
+            width: 100%;
+            padding: 10px 15px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 1rem;
+            box-sizing: border-box;
+            color: #000;
+            background-color: #f9f9f9;
+            transition: border-color 0.3s ease;
+        }
+        .form-group input[type="text"]:focus,
+        .form-group input[type="email"]:focus,
+        .form-group input[type="tel"]:focus,
+        .form-group textarea:focus {
+            border-color: #007bff;
+            outline: none;
+        }
+        .payment-methods {
+            margin-top: 20px;
+        }
+        .payment-methods label {
+            display: block;
+            margin-bottom: 10px;
+            font-size: 1rem;
+            color: #333;
+        }
+        .payment-methods input[type="radio"] {
+            margin-right: 10px;
+        }
+        .order-summary {
+            border: 1px solid #eee;
+            padding: 20px;
+            margin-top: 30px;
+            background-color: #f9f9f9;
+            border-radius: 5px;
+        }
+        .order-summary ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        .order-summary ul li {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            font-size: 1rem;
+        }
+        .order-summary ul li span:first-child {
+            font-weight: bold;
+        }
+        .order-total {
+            font-size: 1.4rem;
+            font-weight: bold;
+            text-align: right;
+            margin-top: 15px;
+            color: #dc3545;
+        }
+        .place-order-button {
+            display: block;
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(90deg, #21c4dd 0%, #39b523 100%);
+            color: white;
+            border: none;
+            border-radius: 22px;
+            font-size: 1.2rem;
+            cursor: pointer;
+            margin-top: 30px;
+            text-align: center;
+            transition: background-color 0.3s ease;
+        }
+        .place-order-button:hover {
+            background: linear-gradient(90deg, #39b523 0%, #21c4dd 100%);
+        }
+        .message {
+            display: none;
+            padding: 10px;
+            margin-bottom: 15px;
+            border-radius: 4px;
+            font-size: 1rem;
+        }
+        .message.error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .message.success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .message.show {
+            display: block;
+        }
+        textarea#note {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            resize: vertical;
+        }
