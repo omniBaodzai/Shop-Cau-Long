@@ -1,11 +1,5 @@
--- Tạo cơ sở dữ liệu với bộ ký tự UTF8MB4 để hỗ trợ Unicode tốt hơn
-CREATE DATABASE IF NOT EXISTS ltw_shop_cau_long
-CHARACTER SET utf8mb4
-COLLATE utf8mb4_unicode_ci;
 
--- Sử dụng cơ sở dữ liệu vừa tạo
-USE ltw_shop_cau_long;
-
+ALTER DATABASE `if0_41283872_yeu_cau_long_1` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 -- Bảng: users
 -- Lưu trữ thông tin người dùng (khách hàng)
 CREATE TABLE IF NOT EXISTS users (
@@ -76,8 +70,8 @@ CREATE TABLE IF NOT EXISTS orders (
     shipping_fee DECIMAL(10, 2) NOT NULL COMMENT 'Phí vận chuyển',
     final_total DECIMAL(10, 2) NOT NULL COMMENT 'Tổng tiền cuối cùng (bao gồm phí vận chuyển)',
     order_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT 'Thời gian đặt hàng',
-    status ENUM('Chờ xử lý', 'Đang xử lý', 'Đã giao', 'Hủy') DEFAULT 'Chờ xử lý' COMMENT 'Trạng thái đơn hàng',
-    payment_status ENUM('Chưa thanh toán', 'Đã thanh toán', 'Hoàn tiền') DEFAULT 'Chưa thanh toán' COMMENT 'Trạng thái thanh toán',
+status ENUM('Chờ xử lý', 'Đang xử lý', 'Đã giao', 'Hủy') DEFAULT NULL,
+payment_status ENUM('Chưa thanh toán', 'Đã thanh toán', 'Hoàn tiền') DEFAULT NULL,
     note TEXT DEFAULT NULL COMMENT 'Ghi chú đơn hàng',
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
     INDEX idx_user_id (user_id) COMMENT 'Index để tối ưu tìm kiếm theo user_id',
@@ -112,123 +106,7 @@ CREATE TABLE reviews (
 );
 
 
--- Trigger: enforce_status_payment_constraint
--- Đảm bảo trạng thái thanh toán là 'Đã thanh toán' khi đơn hàng có trạng thái 'Đã giao'
-DELIMITER //
-CREATE TRIGGER enforce_status_payment_constraint
-BEFORE INSERT ON orders
-FOR EACH ROW
-BEGIN
-    IF NEW.status = 'Đã giao' AND NEW.payment_status != 'Đã thanh toán' THEN
-        SIGNAL SQLSTATE '45000'
-        SET MESSAGE_TEXT = 'Khi trạng thái đơn hàng là "Đã giao", trạng thái thanh toán phải là "Đã thanh toán".';
-    END IF;
-END //
-DELIMITER ;
 
--- Trigger: enforce_status_payment_constraint_update
--- Áp dụng ràng buộc tương tự khi cập nhật trạng thái đơn hàng
-DELIMITER //
-CREATE TRIGGER enforce_status_payment_constraint_update
-BEFORE UPDATE ON orders
-FOR EACH ROW
-BEGIN
-    IF NEW.status = 'Đã giao' AND NEW.payment_status != 'Đã thanh toán' THEN
-        SIGNAL SQLSTATE '45000'
-        SET MESSAGE_TEXT = 'Khi trạng thái đơn hàng là "Đã giao", trạng thái thanh toán phải là "Đã thanh toán".';
-    END IF;
-END //
-DELIMITER ;
-
--- Trigger: after_order_item_insert
--- Giảm số lượng tồn kho khi thêm mục vào đơn hàng
-DELIMITER //
-CREATE TRIGGER after_order_item_insert
-AFTER INSERT ON order_items
-FOR EACH ROW
-BEGIN
-    UPDATE products
-    SET stock = stock - NEW.quantity
-    WHERE id = NEW.product_id;
-END //
-DELIMITER ;
-
--- Trigger: after_order_item_delete
--- Khôi phục số lượng tồn kho khi xóa mục đơn hàng
-DELIMITER //
-CREATE TRIGGER after_order_item_delete
-AFTER DELETE ON order_items
-FOR EACH ROW
-BEGIN
-    UPDATE products
-    SET stock = stock + OLD.quantity
-    WHERE id = OLD.product_id;
-END //
-DELIMITER ;
-
--- Trigger: trg_set_import_price
--- Tự động thiết lập giá nhập bằng 80% giá bán khi thêm bản ghi vào bảng inventory
-DELIMITER //
-CREATE TRIGGER trg_set_import_price
-BEFORE INSERT ON inventory
-FOR EACH ROW
-BEGIN
-    DECLARE productPrice DECIMAL(10, 2);
-    SELECT price INTO productPrice FROM products WHERE id = NEW.product_id;
-    SET NEW.import_price = productPrice * 0.8;
-END //
-DELIMITER ;
-
--- Trigger: trg_after_insert_product
--- Tự động thêm bản ghi vào bảng inventory khi sản phẩm mới được tạo
-DELIMITER //
-CREATE TRIGGER trg_after_insert_product
-AFTER INSERT ON products
-FOR EACH ROW
-BEGIN
-    INSERT INTO inventory (product_id, import_price, min_stock)
-    VALUES (NEW.id, NEW.price * 0.8, 5);
-END //
-DELIMITER ;
-
--- Chèn dữ liệu vào bảng inventory cho các sản phẩm hiện có
-INSERT INTO inventory (product_id, import_price, min_stock)
-SELECT id, price * 0.8, 5
-FROM products
-WHERE id NOT IN (SELECT product_id FROM inventory);
-
--- Trigger bổ sung: check_stock_before_order
--- Kiểm tra số lượng tồn kho trước khi thêm mục vào đơn hàng
-DELIMITER //
-CREATE TRIGGER check_stock_before_order
-BEFORE INSERT ON order_items
-FOR EACH ROW
-BEGIN
-    DECLARE current_stock INT;
-    SELECT stock INTO current_stock FROM products WHERE id = NEW.product_id;
-    IF current_stock < NEW.quantity THEN
-        SIGNAL SQLSTATE '45000'
-        SET MESSAGE_TEXT = 'Số lượng tồn kho không đủ để thực hiện đơn hàng.';
-    END IF;
-END //
-DELIMITER ;
-
--- Trigger bổ sung: update_warranty_expire_date
--- Tự động tính ngày hết hạn bảo hành dựa trên thời gian bảo hành của sản phẩm
-DELIMITER //
-CREATE TRIGGER update_warranty_expire_date
-BEFORE INSERT ON order_items
-FOR EACH ROW
-BEGIN
-    DECLARE warranty_period VARCHAR(50);
-    DECLARE warranty_months INT;
-    SELECT warranty INTO warranty_period FROM products WHERE id = NEW.product_id;
-    IF warranty_period IS NOT NULL AND warranty_period REGEXP '^[0-9]+' THEN
-        SET warranty_months = CAST(SUBSTRING(warranty_period, 1, REGEXP_INSTR(warranty_period, '[^0-9]') - 1) AS UNSIGNED);
-        SET NEW.warranty_expire_date = DATE_ADD(CURDATE(), INTERVAL warranty_months MONTH);
-    END IF;
-END //
-DELIMITER ;
 
 INSERT INTO products (name, image, price, old_price, sku, brand, category, warranty, stock, description, specs, promotion) VALUES
 ('Giày cầu lông Taro TR024-2', 'https://cdn.shopvnb.com/img/300x300/uploads/san_pham/giay-cau-long-taro-tr024-2_1732240309.webp', 499000.00, 499000.00, 'TARO-GI001', 'Taro', 'Giày cầu lông', '12 tháng', 100, 'Sản phẩm Giày cầu lông Taro TR024-2 chất lượng cao.', 'Thông số kỹ thuật chi tiết sẽ được cập nhật sớm.', 'Không có ưu đãi'),
